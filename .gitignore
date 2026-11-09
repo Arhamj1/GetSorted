@@ -1,0 +1,6 @@
+node_modules/
+reminder-previews/
+*service-account*.json
+.env
+getsorted_original.html
+.claude/

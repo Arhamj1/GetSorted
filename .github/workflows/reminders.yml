@@ -1,0 +1,42 @@
+name: Renewal reminder emails
+
+on:
+  schedule:
+    - cron: "30 3 * * *"   # every day at 09:00 IST (03:30 UTC)
+  workflow_dispatch:         # lets you run it by hand from the Actions tab
+    inputs:
+      dry_run:
+        description: "Dry run (send nothing)"
+        type: boolean
+        default: false
+      to:
+        description: "Send every email to this address instead (testing)"
+        type: string
+        default: ""
+
+concurrency:
+  group: reminders
+  cancel-in-progress: false
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Send reminders
+        run: node scripts/send-reminders.mjs ${{ inputs.dry_run && '--dry-run' || '' }}
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          APP_URL: ${{ vars.APP_URL }}
+          TEST_TO: ${{ inputs.to }}

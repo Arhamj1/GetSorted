@@ -1,0 +1,18 @@
+{
+  "name": "getsorted",
+  "version": "1.0.0",
+  "private": true,
+  "description": "GetSorted subscription tracker, plus the daily renewal-reminder email job.",
+  "type": "module",
+  "scripts": {
+    "reminders": "node scripts/send-reminders.mjs",
+    "reminders:preview": "node scripts/send-reminders.mjs --demo --dry-run"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.10.0",
+    "nodemailer": "^6.9.16"
+  }
+}
