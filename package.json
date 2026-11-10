@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "reminders": "node scripts/send-reminders.mjs",
-    "reminders:preview": "node scripts/send-reminders.mjs --demo --dry-run"
+    "reminders:preview": "node scripts/send-reminders.mjs --demo --dry-run",
+    "test:parser": "node scripts/test-gmail-parser.mjs"
   },
   "engines": {
     "node": ">=20"

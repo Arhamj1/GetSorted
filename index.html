@@ -367,6 +367,60 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .flatpickr-day.today{border-color:var(--line-3)!important}
 .flatpickr-day.selected,.flatpickr-day.selected:hover{background:var(--accent)!important;border-color:var(--accent)!important;color:var(--accent-ink)!important}
 
+/* Import from Gmail */
+.modal.import{width:min(640px,100%)}
+.modal-foot .grow{flex:1;align-self:center;font-size:.78rem;color:var(--text-3)}
+.imp-hero{text-align:center;padding:6px 6px 0}
+.imp-logos{display:flex;justify-content:center;margin:4px 0 18px}
+.imp-logos .tile{width:46px;height:46px;border-radius:13px;margin-left:-10px;outline:3px solid var(--panel)}
+.imp-logos .tile:first-child{margin-left:0}
+.imp-hero h3{font-size:1.3rem;font-weight:600;letter-spacing:-.025em}
+.imp-hero p{color:var(--text-2);font-size:.9rem;margin:8px auto 0;max-width:48ch}
+.imp-points{list-style:none;display:grid;gap:8px;margin-top:22px}
+.imp-points li{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border:1px solid var(--line);border-radius:var(--r);background:var(--panel-2);font-size:.85rem;color:var(--text-2);line-height:1.45}
+.imp-points svg{width:18px;height:18px;color:var(--accent);flex-shrink:0;margin-top:1px}
+.imp-points b{color:var(--text);font-weight:550}
+.btn-google{background:#fff;color:#1F1F1F;box-shadow:0 0 0 1px rgba(255,255,255,.2),0 8px 24px -10px rgba(0,0,0,.6)}
+.btn-google:hover{background:#EDEDF0}
+.imp-scan{text-align:center;padding:34px 8px 26px}
+.imp-ring{width:52px;height:52px;margin:0 auto 18px;border-radius:50%;border:3px solid var(--panel-3);border-top-color:var(--accent);animation:spin .9s linear infinite}
+.imp-scan h3{font-size:1.1rem;font-weight:600;letter-spacing:-.02em}
+.imp-bar{height:6px;background:var(--panel-3);border-radius:99px;overflow:hidden;margin:18px auto 10px;max-width:340px}
+.imp-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#9A8DFF,#6E5CF0);border-radius:99px;transition:width .3s var(--ease)}
+.imp-count{font-size:.8rem;color:var(--text-3)}
+.imp-summary{font-size:.88rem;color:var(--text-2);margin-bottom:14px}
+.imp-summary b{color:var(--text);font-weight:600}
+.imp-list{display:flex;flex-direction:column;gap:8px}
+.imp-row{display:grid;grid-template-columns:auto auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px;border:1px solid var(--line);border-radius:var(--r);background:var(--panel-2);cursor:pointer;transition:border-color .15s,background .15s;animation:rise .4s var(--ease) both;animation-delay:var(--d,0ms)}
+.imp-row:hover{border-color:var(--line-3)}
+.imp-row.on{border-color:rgba(139,124,255,.5);background:linear-gradient(var(--accent-soft),var(--accent-soft)),var(--panel-2)}
+.imp-row.off{cursor:default;opacity:.6}
+.imp-row.off:hover{border-color:var(--line)}
+.imp-check{appearance:none;-webkit-appearance:none;width:20px;height:20px;margin:0;border-radius:6px;border:1.5px solid var(--line-3);background:var(--panel);display:grid;place-items:center;cursor:pointer;transition:all .15s}
+.imp-check:checked{background:var(--accent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E") center/13px no-repeat;border-color:var(--accent)}
+.imp-check:disabled{cursor:default;opacity:.5}
+.imp-name{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-weight:550;font-size:.93rem}
+.imp-name .chip{height:20px;padding:0 8px;font-size:.66rem}
+.imp-meta{font-size:.76rem;color:var(--text-3);margin-top:2px}
+.imp-edit{display:flex;gap:6px;align-items:center}
+.imp-amt{position:relative;width:98px}
+.imp-amt span{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-3);font-family:var(--mono);font-size:.8rem;pointer-events:none}
+.imp-amt input{height:34px;padding:0 8px 0 22px;font-size:.84rem;border-radius:9px;font-family:var(--mono)}
+.imp-cycle{height:34px;padding:0 26px 0 10px;font-size:.78rem;border-radius:9px;background-position:right 9px center;background-color:var(--panel)}
+.imp-conv{display:block;font-size:.66rem;color:var(--text-3);margin-top:3px;text-align:right}
+.imp-empty{text-align:center;padding:30px 10px 20px}
+.imp-empty h3{font-size:1.05rem;font-weight:600;margin-bottom:6px}
+.imp-empty p{color:var(--text-3);font-size:.86rem;max-width:40ch;margin:0 auto}
+@media (max-width:560px){
+  .imp-row{grid-template-columns:auto auto minmax(0,1fr)}
+  .imp-right{grid-column:1/-1;padding-left:66px}
+  .imp-conv{text-align:left}
+}
+@media (max-width:760px){
+  .topbar .btn span{display:none}
+  .topbar .btn{padding:0 12px}
+}
+
 /* Toasts */
 #toasts{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:200;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none}
 .toast{display:flex;align-items:center;gap:10px;background:var(--panel-3);border:1px solid var(--line-2);color:var(--text);padding:10px 16px 10px 12px;border-radius:999px;font-size:.85rem;box-shadow:0 20px 50px -10px rgba(0,0,0,.7);animation:toastIn .4s var(--ease) both}
@@ -503,6 +557,10 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
         <a href="#subscriptions">Subscriptions</a>
       </nav>
       <div class="spacer"></div>
+      <button class="btn btn-secondary" id="importBtn" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/><path d="m2 7 10 6 4-2.4"/><path d="M19 2v7"/><path d="m16 6 3 3 3-3"/></svg>
+        <span>Import from Gmail</span>
+      </button>
       <button class="btn btn-primary" id="openAddBtn">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         <span>Add subscription</span>
@@ -695,6 +753,18 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
   </div>
 </div>
 
+<!-- ══════════ IMPORT FROM GMAIL ══════════ -->
+<div class="overlay" id="importOverlay">
+  <div class="modal import" role="dialog" aria-modal="true" aria-labelledby="importTitle">
+    <div class="modal-head">
+      <h2 id="importTitle">Import from Gmail</h2>
+      <button class="icon-btn" type="button" data-close="importOverlay" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body" id="importBody"></div>
+    <div class="modal-foot" id="importFoot"></div>
+  </div>
+</div>
+
 <!-- ══════════ CONFIRM DELETE ══════════ -->
 <div class="overlay" id="confirmOverlay">
   <div class="modal sm" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle">
@@ -724,6 +794,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 
 <div id="toasts" aria-live="polite"></div>
 
+<script src="gmail-import.js"></script>
 <script>
 /* ════════════════════════════════════════════
    CATALOGUE
@@ -994,7 +1065,9 @@ function renderCards() {
         <div class="empty-art"><div class="tile"></div><div class="tile"></div><div class="tile">+</div></div>
         <h3>${none ? 'Nothing tracked yet' : 'No matches'}</h3>
         <p>${none ? 'Add your first subscription and GetSorted will forecast your spend and remind you before it renews.' : 'Try a different search or category.'}</p>
-        ${none ? `<button class="btn btn-primary" onclick="openAdd()">Add your first subscription</button>` : ''}
+        ${none ? `<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+          ${importAvailable() ? `<button class="btn btn-secondary" onclick="openImport()">Import from Gmail</button>` : ''}
+          <button class="btn btn-primary" onclick="openAdd()">Add your first subscription</button></div>` : ''}
       </div>`;
     return;
   }
@@ -1162,6 +1235,7 @@ function openOverlay(id) {
 }
 function closeOverlay(id) {
   if (!$(id).classList.contains('open')) return;
+  if (id === 'importOverlay') importAbort = true;
   $(id).classList.remove('open');
   if (!document.querySelector('.overlay.open')) document.body.style.overflow = '';
   if (lastFocus && lastFocus.focus) lastFocus.focus();
@@ -1173,7 +1247,7 @@ document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
     if (fp && fp.isOpen) return;
-    ['formOverlay','confirmOverlay','aboutOverlay'].forEach(closeOverlay);
+    ['formOverlay','confirmOverlay','aboutOverlay','importOverlay'].forEach(closeOverlay);
     deletingId = null;
     $('userMenu').classList.remove('open');
   }
@@ -1361,6 +1435,198 @@ $('openAddBtn').addEventListener('click', openAdd);
 $('closeFormBtn').addEventListener('click', () => closeOverlay('formOverlay'));
 $('cancelFormBtn').addEventListener('click', () => closeOverlay('formOverlay'));
 
+/* ════════════════════════════════════════════
+   IMPORT FROM GMAIL  (parser + Gmail calls live in gmail-import.js)
+════════════════════════════════════════════ */
+let importFound = [], importAbort = false, importScanned = 0;
+const GOOGLE_G = '<svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>';
+const ICON = {
+  lock:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
+  device:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>',
+  check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+};
+const importAvailable = () => typeof GmailImport !== 'undefined' && (isDemo || GmailImport.isConfigured());
+function setImport(body, foot) { $('importBody').innerHTML = body; $('importFoot').innerHTML = foot; }
+
+function openImport() {
+  importAbort = false;
+  const names = GmailImport.RULES.map(r => r.name);
+  setImport(`
+    <div class="imp-hero">
+      <div class="imp-logos">${['Netflix','Spotify','YouTube Premium','Apple Music','ChatGPT','Swiggy One'].map(n => tile(n)).join('')}</div>
+      <h3>Find your subscriptions automatically</h3>
+      <p>GetSorted looks through the last 13 months of your Gmail for receipts from Netflix, Spotify, YouTube, ChatGPT and ${names.length - 4} more, then lets you choose which to add.</p>
+    </div>
+    <ul class="imp-points">
+      <li>${ICON.lock}<span><b>Read-only.</b> GetSorted can't send, delete or change any email.</span></li>
+      <li>${ICON.device}<span><b>Stays on your device.</b> Receipts are read in your browser and never stored. Access is revoked as soon as the scan ends.</span></li>
+      <li>${ICON.check}<span><b>You decide.</b> Nothing is added until you review and confirm.</span></li>
+    </ul>`,
+    `<button class="btn btn-ghost" data-close="importOverlay">Cancel</button>
+     ${isDemo
+       ? `<button class="btn btn-primary" id="impStart">Scan the demo inbox</button>`
+       : `<button class="btn btn-google" id="impStart">${GOOGLE_G.replace('<svg', '<svg width="18" height="18"')}Continue with Google</button>`}`);
+  wireImportClose();
+  $('impStart').addEventListener('click', startImport);
+  openOverlay('importOverlay');
+}
+function wireImportClose() {
+  $('importOverlay').querySelectorAll('.modal-foot [data-close]').forEach(b => b.addEventListener('click', () => closeOverlay('importOverlay')));
+}
+
+function showImportProgress(done, total) {
+  importScanned = total;
+  if (!$('impBar')) {
+    setImport(`
+      <div class="imp-scan">
+        <div class="imp-ring"></div>
+        <h3>${isDemo ? 'Scanning the demo inbox' : 'Scanning your Gmail'}</h3>
+        <div class="imp-bar"><i id="impBar"></i></div>
+        <div class="imp-count" id="impCount">Looking for receipts…</div>
+      </div>`,
+      `<button class="btn btn-ghost" data-close="importOverlay">Cancel</button>`);
+    wireImportClose();
+  }
+  if (total) {
+    $('impBar').style.width = Math.round(done / total * 100) + '%';
+    $('impCount').textContent = `Checked ${done} of ${total} email${total === 1 ? '' : 's'}`;
+  }
+}
+
+async function startImport() {
+  importAbort = false;
+  const today = GmailImport.todayISO();
+  let receipts;
+  try {
+    if (isDemo) {
+      const inbox = GmailImport.demoInbox(today);
+      showImportProgress(0, inbox.length);
+      for (let i = 1; i <= inbox.length; i++) {
+        await new Promise(r => setTimeout(r, 160));
+        if (importAbort) return;
+        showImportProgress(i, inbox.length);
+      }
+      receipts = inbox.map(GmailImport.parseReceipt).filter(Boolean);
+    } else {
+      const token = await GmailImport.getToken(currentUser && currentUser.email);
+      if (importAbort) { GmailImport.revoke(token); return; }
+      showImportProgress(0, 0);
+      try { receipts = await GmailImport.scanGmail(token, (d, t) => { if (!importAbort) showImportProgress(d, t); }); }
+      finally { GmailImport.revoke(token); }
+    }
+  } catch (err) {
+    if (importAbort) return;
+    setImport(`<div class="imp-empty"><h3>Couldn't scan your inbox</h3><p>${esc(err.message || 'Something went wrong.')}</p></div>`,
+      `<button class="btn btn-ghost" data-close="importOverlay">Close</button><button class="btn btn-primary" id="impRetry">Try again</button>`);
+    wireImportClose();
+    $('impRetry').addEventListener('click', startImport);
+    return;
+  }
+  if (importAbort) return;
+  importFound = GmailImport.groupFindings(receipts, today, subscriptions.map(s => s.name))
+    .map(f => ({ ...f, pick: f.status === 'new' }));
+  showImportResults(receipts.length);
+}
+
+const IMPORT_STATUS = {
+  new:       ['chip ok', 'Found'],
+  tracked:   ['chip', 'Already tracked'],
+  cancelled: ['chip danger', 'Cancelled'],
+  stale:     ['chip warn', 'No recent payment'],
+};
+function showImportResults(receiptCount) {
+  if (!importFound.length) {
+    setImport(`<div class="imp-empty"><div class="empty-art"><div class="tile"></div><div class="tile"></div><div class="tile">?</div></div>
+      <h3>No subscription receipts found</h3>
+      <p>We checked ${importScanned} email${importScanned === 1 ? '' : 's'} from ${GmailImport.RULES.length} services. You can still add subscriptions by hand.</p></div>`,
+      `<button class="btn btn-ghost" data-close="importOverlay">Close</button><button class="btn btn-primary" id="impManual">Add manually</button>`);
+    wireImportClose();
+    $('impManual').addEventListener('click', () => { closeOverlay('importOverlay'); openAdd(); });
+    return;
+  }
+  const fresh = importFound.filter(f => f.status === 'new').length;
+  setImport(`
+    <div class="imp-summary">Found <b>${importFound.length} subscription${importFound.length === 1 ? '' : 's'}</b> in ${receiptCount} receipt${receiptCount === 1 ? '' : 's'}${fresh ? `, <b>${fresh}</b> new` : ''}. Check the price and cycle, then add the ones you want.</div>
+    <div class="imp-list">${importFound.map((f, i) => {
+      const locked = f.status === 'tracked';
+      const [chipCls, chipText] = IMPORT_STATUS[f.status];
+      const pay = f.payment === 'Card' ? `${f.bank || 'Card'}${f.last4 ? ' •• ' + f.last4 : ''}` : 'UPI';
+      const last = parseDate(f.lastDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+      return `
+      <div class="imp-row ${f.pick ? 'on' : ''} ${locked ? 'off' : ''}" data-i="${i}" style="--d:${i * 45}ms">
+        <input type="checkbox" class="imp-check" ${f.pick ? 'checked' : ''} ${locked ? 'disabled' : ''} aria-label="Add ${esc(f.name)}" />
+        ${tile(f.name)}
+        <div style="min-width:0">
+          <div class="imp-name">${esc(f.name)} <span class="${chipCls}">${chipText}</span></div>
+          <div class="imp-meta">${f.receipts} receipt${f.receipts === 1 ? '' : 's'} · last ${last} · ${esc(pay)}${locked ? '' : ` · next ${niceDate(f.date)}`}</div>
+        </div>
+        ${locked ? '' : `<div class="imp-right">
+          <div class="imp-edit">
+            <div class="imp-amt"><span>₹</span><input class="input imp-cost" inputmode="decimal" value="${f.cost ?? ''}" placeholder="Price" aria-label="Price for ${esc(f.name)}" /></div>
+            <select class="select imp-cycle" aria-label="Billing cycle for ${esc(f.name)}">
+              <option ${f.cycle === 'Monthly' ? 'selected' : ''}>Monthly</option><option ${f.cycle === 'Yearly' ? 'selected' : ''}>Yearly</option>
+            </select>
+          </div>
+          ${f.converted ? `<span class="imp-conv">≈ from $${f.converted}</span>` : ''}
+        </div>`}
+      </div>`;
+    }).join('')}</div>`,
+    `<span class="grow" id="impNote"></span>
+     <button class="btn btn-ghost" data-close="importOverlay">Cancel</button>
+     <button class="btn btn-primary" id="impAdd"></button>`);
+  wireImportClose();
+  const list = $('importBody').querySelector('.imp-list');
+  list.addEventListener('click', e => {
+    const row = e.target.closest('.imp-row');
+    if (!row || row.classList.contains('off') || e.target.closest('input:not(.imp-check), select')) return;
+    const f = importFound[row.dataset.i];
+    f.pick = e.target.classList.contains('imp-check') ? e.target.checked : !f.pick;
+    row.querySelector('.imp-check').checked = f.pick;
+    row.classList.toggle('on', f.pick);
+    updateImportCount();
+  });
+  list.addEventListener('input', e => {
+    const row = e.target.closest('.imp-row'); if (!row) return;
+    const f = importFound[row.dataset.i];
+    if (e.target.classList.contains('imp-cost')) {
+      e.target.value = e.target.value.replace(/[^\d.]/g, '');
+      f.cost = parseFloat(e.target.value) || null;
+    }
+    if (e.target.classList.contains('imp-cycle')) f.cycle = e.target.value;
+  });
+  list.addEventListener('change', e => { if (e.target.classList.contains('imp-cycle')) importFound[e.target.closest('.imp-row').dataset.i].cycle = e.target.value; });
+  $('impAdd').addEventListener('click', confirmImport);
+  updateImportCount();
+}
+function updateImportCount() {
+  const n = importFound.filter(f => f.pick).length;
+  $('impAdd').textContent = n ? `Add ${n} subscription${n === 1 ? '' : 's'}` : 'Select subscriptions';
+  $('impAdd').disabled = !n;
+  $('impNote').textContent = isDemo ? 'Demo: nothing is saved.' : '';
+}
+function confirmImport() {
+  const chosen = importFound.filter(f => f.pick && f.status !== 'tracked');
+  if (!chosen.length) return;
+  const missing = chosen.find(f => !(f.cost > 0));
+  if (missing) return toast(`Enter a price for ${missing.name}.`, true);
+  chosen.forEach(f => {
+    const svc = SERVICES.find(s => s.name === f.name);
+    const s = {
+      id: makeId(), name: f.name, cost: f.cost, cycle: f.cycle, date: f.date,
+      category: svc ? svc.cat : 'Other', autopay: true,
+      payment: f.payment, bank: f.payment === 'Card' ? f.bank : '', last4: f.payment === 'Card' ? f.last4 : '',
+      source: 'gmail',
+    };
+    subscriptions.push(s);
+    saveSub(s);
+  });
+  closeOverlay('importOverlay');
+  processExpiredSubscriptions();
+  render();
+  toast(`${chosen.length} subscription${chosen.length === 1 ? '' : 's'} imported from Gmail.`);
+}
+$('importBtn').addEventListener('click', openImport);
+
 /* Delete */
 function askDelete(id) {
   deletingId = id;
@@ -1447,6 +1713,7 @@ function showApp(email) {
   $('userEmail').textContent = email || '';
   $('avatarBtn').textContent = (email || 'A').charAt(0);
   $('demoBar').classList.toggle('show', isDemo);
+  $('importBtn').hidden = !importAvailable();
   window.scrollTo(0, 0);
 }
 

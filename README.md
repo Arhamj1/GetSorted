@@ -3,8 +3,62 @@
 Subscription tracker built with JavaScript, Firebase Auth, Cloud Firestore and Chart.js.
 
 - `index.html` is the whole web app.
+- `gmail-import.js` finds subscriptions in a user's Gmail receipts.
 - `scripts/send-reminders.mjs` is the daily renewal-reminder email job.
 - `.github/workflows/reminders.yml` runs that job every day at 09:00 IST.
+
+## Import from Gmail
+
+Users click **Import from Gmail**, sign in with Google and allow read-only access. GetSorted then searches the last 13 months of their inbox for receipts from 15 services (Netflix, Spotify, YouTube, Apple, ChatGPT, Claude, Swiggy, Zomato and more).
+
+From those receipts it works out the price, monthly or yearly billing, the next billing date and the card or UPI used. Users review the list, fix anything, and add the ones they want.
+
+- **Read-only:** the only permission requested is `gmail.readonly`.
+- **Nothing leaves the browser:** emails are read and parsed on the user's device. Only the subscriptions they confirm are saved.
+- **Short-lived access:** the Google access token is revoked as soon as the scan finishes.
+- **Smart labelling:** already-tracked, cancelled and lapsed subscriptions are labelled and left unticked.
+- **Demo mode:** `?demo` runs the same parser over a sample inbox, so the flow works without a Google account.
+
+Run the parser tests:
+
+```bash
+npm run test:parser
+```
+
+### Turn it on for real accounts (one-time, about 10 minutes)
+
+Until a client ID is set, the button only appears in demo mode.
+
+**1. Create a Google Cloud project.**
+
+1. Open <https://console.cloud.google.com/>.
+2. You can reuse the **getsorted-a423c** project that Firebase already created.
+
+**2. Enable the Gmail API.**
+
+Go to **APIs & Services → Library → Gmail API → Enable**.
+
+**3. Set up the OAuth consent screen.**
+
+Go to **APIs & Services → OAuth consent screen**, or **Google Auth Platform** in newer consoles, and fill in:
+
+- **App name:** GetSorted
+- **User support email:** your email
+- **Audience:** External
+- **Data access:** add the scope `https://www.googleapis.com/auth/gmail.readonly`
+- **Test users:** add every Gmail address that should be allowed to use the import, including your own. Up to 100 addresses.
+
+**4. Create the client ID.**
+
+1. Go to **Credentials → Create credentials → OAuth client ID → Web application**.
+2. Under **Authorised JavaScript origins**, add the address the site runs on, for example `http://localhost:5173` and your live site's URL.
+3. Copy the **Client ID**. It ends in `.apps.googleusercontent.com`.
+
+**5. Add it to the code.**
+
+Paste the client ID into `GOOGLE_CLIENT_ID` at the top of `gmail-import.js`. The client ID is public by design, so it's fine to commit. Never commit a client *secret*; this feature doesn't use one.
+
+While the app is in Google's "Testing" mode, users see an "unverified app" warning and must be on the test-user list. Opening it to everyone requires Google's verification and a security assessment for the restricted Gmail scope.
 
 ## Renewal reminder emails
 
