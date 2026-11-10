@@ -99,10 +99,93 @@ t('converts dollar amounts to rupees', () => {
   assert.equal(s.converted, 20); assert.ok(s.cost > 1000 && s.cost < 3000);
 });
 
+t('Netflix billed through Airtel is marked free via partner', () => {
+  const rs = [
+    { from: 'Netflix <info@account.netflix.com>', subject: 'Your Netflix membership', date: '2026-11-08', text: 'Your membership is billed through your Airtel plan. Plan: Basic' },
+    { from: 'Netflix <info@account.netflix.com>', subject: 'Your Netflix membership', date: '2026-10-08', text: 'Your membership is billed through your Airtel plan. Plan: Basic' },
+  ].map(parseReceipt);
+  const [s] = groupFindings(rs, today);
+  assert.equal(s.status, 'free'); assert.equal(s.partner, 'Airtel'); assert.equal(s.cost, 0);
+});
+
+t('a free plan that is about to expire is marked ending', () => {
+  const rs = [
+    { from: 'OpenAI <noreply@tm.openai.com>', subject: 'Your ChatGPT Go receipt', date: '2025-11-20', text: 'ChatGPT Go 12 months free. Total ₹0.00' },
+    { from: 'OpenAI <noreply@tm.openai.com>', subject: 'Your ChatGPT Go subscription is expiring soon', date: '2026-11-05', text: 'Your free ChatGPT Go access expires on 20 Nov 2026. Add a payment method to keep Go.' },
+  ].map(parseReceipt);
+  const [s] = groupFindings(rs, today);
+  assert.equal(s.status, 'ending'); assert.equal(s.endDate, '2026-11-20'); assert.equal(s.date, '2026-11-20'); assert.equal(s.cost, 0);
+});
+
+t('an end date in the past counts as cancelled', () => {
+  const [s] = groupFindings([parseReceipt({ from: 'OpenAI <noreply@tm.openai.com>', subject: 'Your ChatGPT Go plan', date: '2026-10-01', text: 'Your Go plan will end on 15 Oct 2026.' })], today);
+  assert.equal(s.status, 'cancelled');
+});
+
+t('ignores Amazon order emails that mention Prime in the footer', () => {
+  assert.equal(parseReceipt({ from: 'Amazon.in <auto-confirm@amazon.in>', subject: 'Your Amazon.in order of "USB cable" has shipped', date: today,
+    text: 'Order total ₹67. Enjoy FREE delivery with Amazon Prime. Prime members save more every year.' }), null);
+  assert.equal(parseReceipt({ from: 'Amazon.in <store-news@amazon.in>', subject: 'Prime Video: thanks for renting', date: today, text: 'Rental ₹67 Prime Video' }), null);
+  const real = parseReceipt({ from: 'Amazon.in <prime@amazon.in>', subject: 'Your Amazon Prime membership has been renewed', date: '2026-10-30', text: 'Prime annual membership Total ₹1,499' });
+  assert.equal(real.name, 'Amazon Prime Video'); assert.equal(real.amount, 1499); assert.equal(real.cycle, 'Yearly');
+});
+
+t('an ended Prime membership stays ended despite later ads', () => {
+  const amz = (subject, date, text) => ({ from: 'Amazon.in <store-news@amazon.in>', subject, date, text });
+  const rs = [
+    amz("The road to power is paved with betrayal. Join Prime Lite to watch 'Mirzapur'", '2026-10-30', 'Join Prime Lite for ₹67 a month. Amazon Prime membership benefits.'),
+    amz('Your Amazon Prime membership has ended', '2026-09-22', 'Your Prime membership has ended. Rejoin Amazon Prime anytime.'),
+    amz("You aren't taking full advantage of your Prime membership", '2026-09-02', 'Your Prime membership includes Prime Video.'),
+    amz("You aren't taking full advantage of your Prime membership", '2026-08-14', 'Your Prime membership includes Prime Video.'),
+  ].map(parseReceipt);
+  const [s] = groupFindings(rs, today);
+  assert.equal(s.status, 'cancelled'); assert.equal(s.cost, null);
+  assert.equal(s.sources[0].ad, true); assert.equal(s.sources[1].cancelled, true);
+});
+
+t('Netflix promo emails never set a billing date', () => {
+  const nf = (subject, date) => ({ from: 'Netflix <info@mailer.netflix.com>', subject, date, text: 'Watch on any device. Your Netflix membership. Change plan.' });
+  const promos = [
+    nf("Don't forget to finish The Great Indian Kapil Show", '2026-11-08'), nf('Diwali just got better', '2026-11-06'),
+    nf('Top suggestions for Arhamj601', '2026-11-04'), nf('What do you think of Chumbak?', '2026-10-23'),
+    nf('🔔 Reminder: Chumbak is back', '2026-10-01'), nf("Get to know the 'Chumbak' community. 🏠", '2026-09-20'),
+  ].map(parseReceipt);
+  assert.ok(promos.every(r => r.promo));
+  assert.equal(groupFindings(promos, today).length, 0);
+  const withReceipt = [...promos, parseReceipt({ from: 'Netflix <info@account.netflix.com>', subject: 'Your Netflix membership payment', date: '2026-10-12', text: 'Premium plan ₹649 Total ₹649' })];
+  const [s] = groupFindings(withReceipt, today);
+  assert.equal(s.lastDate, '2026-10-12'); assert.equal(s.date, '2026-11-12'); assert.equal(s.cost, 649);
+});
+
+t('a payment after a cancellation means it is active again', () => {
+  const rs = [
+    { from: 'Spotify <no-reply@spotify.com>', subject: 'Your Spotify Premium receipt', date: '2026-10-28', text: 'Premium ₹119 Total ₹119' },
+    { from: 'Spotify <no-reply@spotify.com>', subject: 'Your Premium has been cancelled', date: '2026-08-01', text: 'Premium cancelled' },
+  ].map(parseReceipt);
+  assert.equal(groupFindings(rs, today)[0].status, 'new');
+});
+
+t('a service seen only in ads is not suggested', () => {
+  const r = parseReceipt({ from: 'Amazon.in <store-news@amazon.in>', subject: 'Watch the new season on Prime Video', date: today, text: 'Amazon Prime membership ₹1,499' });
+  assert.equal(groupFindings([r], today).length, 0);
+});
+
+t('footer text about "a year" does not flip a monthly plan to yearly', () => {
+  const filler = ' lorem ipsum'.repeat(60);
+  const r = parseReceipt({ from: 'Spotify <no-reply@spotify.com>', subject: 'Your receipt', date: today,
+    text: 'Premium Individual monthly Total ₹119.' + filler + ' Save 2 months with a year of Premium.' });
+  assert.equal(r.cycle, 'Monthly');
+});
+
+t('keeps the email subjects so users can see why', () => {
+  const [s] = groupFindings([parseReceipt({ from: 'Spotify <no-reply@spotify.com>', subject: 'Your Spotify receipt', date: '2026-11-01', text: 'Premium Total ₹119' })], today);
+  assert.equal(s.sources[0].subject, 'Your Spotify receipt'); assert.equal(s.sources[0].amount, 119);
+});
+
 t('demo inbox finds the expected services', () => {
   const found = groupFindings(demoInbox(today).map(parseReceipt), today, ['Spotify', 'Netflix']);
   const byName = Object.fromEntries(found.map(f => [f.name, f.status]));
-  assert.deepEqual(byName, { 'Apple Music': 'new', ChatGPT: 'new', 'Zomato Gold': 'new', SonyLiv: 'cancelled', Spotify: 'tracked', Netflix: 'tracked' });
+  assert.deepEqual(byName, { 'Apple Music': 'new', ChatGPT: 'new', 'Zomato Gold': 'new', Zee5: 'free', SonyLiv: 'cancelled', Spotify: 'tracked', Netflix: 'tracked' });
 });
 
 console.log(`\n${passed} passed`);

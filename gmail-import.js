@@ -13,7 +13,7 @@
 
   /* Paste the OAuth "Web application" client ID from Google Cloud here.
      Until it's set, the import only runs in demo mode. */
-  const GOOGLE_CLIENT_ID = '';
+  const GOOGLE_CLIENT_ID = '87104435109-cson541e4p5mcvfilr7va9scabol94uu.apps.googleusercontent.com';
 
   const SCOPE = 'https://www.googleapis.com/auth/gmail.readonly';
   const USD_INR = 88; // rough rate for receipts billed in dollars; the user can edit the amount
@@ -23,7 +23,9 @@
   /* ─── Which senders mean which subscription ─── */
   const RULES = [
     { name:'Netflix',            domains:['netflix.com'],                  need:/payment|receipt|billing|membership|invoice|charged|renew|plan/i, skip:/new device|sign[- ]?in|household|password|top 10|new arrival|watch now/i },
-    { name:'Amazon Prime Video', domains:['amazon.in','amazon.com','primevideo.com'], need:/prime (membership|video)|amazon prime/i, skip:/shipped|delivered|out for delivery|your order|arriving|deal/i },
+    // Amazon order emails mention "Amazon Prime" in their footers, so the subject itself must be about Prime
+    { name:'Amazon Prime Video', domains:['amazon.in','amazon.com','primevideo.com'], subj:/\bprime\b/i, need:/prime (membership|video|lite|plan)|amazon prime/i,
+      skip:/shipped|delivered|out for delivery|your (amazon(\.in)?\s)?order|order (placed|confirmed)|arriving|deal|sale|refund|return|rent(ed|al)|you (bought|purchased)|prime day/i },
     { name:'JioHotstar',         domains:['hotstar.com','jiohotstar.com','startv.com'], need:/subscription|payment|receipt|plan|renew|invoice/i },
     { name:'SonyLiv',            domains:['sonyliv.com'],                  need:/subscription|payment|receipt|plan|renew|invoice|premium/i },
     { name:'Zee5',               domains:['zee5.com'],                     need:/subscription|payment|receipt|plan|renew|invoice|premium/i },
@@ -41,6 +43,18 @@
   const ALL_DOMAINS = [...new Set(RULES.flatMap(r => r.domains))];
   const NOT_A_RECEIPT = /\b(otp|one[- ]time (password|code)|verification code|verify your|sign[- ]?in attempt|reset your password|security alert|confirm your email)\b/i;
   const CANCELLED = /\b(cancel(l)?ed|cancellation|has ended|subscription ended|won'?t renew|will not renew|membership ended|refund(ed)?)\b/i;
+  // Ending soon, e.g. a free year of ChatGPT Go running out
+  const EXPIRING = /\b(expir(es|ing|y|ation)|will (end|expire)|ends on|is ending|coming to an end|last day of|access (ends|until))\b/i;
+  // Paid for by someone else, e.g. Netflix bundled with an Airtel plan
+  const PARTNER = /\b(airtel|jio ?(fiber|airfiber|postpaid|prepaid|plan|recharge)|vi postpaid|vodafone( idea)?|tata play|act fibernet|hathway|excitel)\b/i;
+  const PARTNER_BILLED = /\b((billed|paid|charged|managed) (by|through|via|to) (your )?(partner|airtel|jio|vi|vodafone|tata play|mobile (plan|operator)|telecom|provider)|included (with|in) your (airtel|jio|vi|plan|mobile|broadband|recharge)|through your (airtel|jio|vi|mobile|telecom|broadband) (plan|account|connection)|partner (plan|billing|offer|subscription))\b/i;
+  const FREE_TEXT = /\b(free (trial|for \d+ (days?|months?|years?))|complimentary|no (extra )?charge|at no (extra )?cost|free of (cost|charge))\b/i;
+  // Ads and nudges ("Join Prime Lite to watch…", "You aren't taking full advantage…") say nothing about what you pay
+  const PROMO = /\b(join|rejoin|come back|we miss you|upgrade|try|watch|don'?t miss|aren'?t taking full advantage|make the most|get more|discover|exclusive|offers?|deals?|limited[- ]time|save (up to|\d)|introducing|new on|now (streaming|available)|recommended)\b/i;
+  const PAID_SUBJECT = /\b(receipt|invoice|payment|paid|charged|renewed|billing|bill)\b/i;
+  // Only emails whose subject is about billing or the account count; "Don't forget to finish…", "Diwali just got better" don't
+  const ACCOUNT_SUBJECT = /\b(receipts?|invoices?|payments?|paid|pay|charged?|renew(ed|al|s|ing)?|bill(ed|ing)?|membership|subscri(ption|bed|be)|plans?|cancel(l)?(ed|ation)?|ended|ending|ends|expir\w*|trial|welcome|purchase|confirm(ed|ation)?|activated|active|premium|upgraded)\b/i;
+  const ZERO_AMOUNT =/(?:₹|\bRs\.?|\bINR|\$)\s?0(?:\.0{1,2})?(?![\d,]|\.\d)/i;
 
   const BANK_WORDS = [
     ['HDFC', /\bHDFC\b/i], ['ICICI', /\bICICI\b/i], ['SBI', /\bSBI\b|state bank/i], ['Axis', /\baxis bank\b|\baxis\b/i],
@@ -105,13 +119,21 @@
     return null;
   }
 
-  function findRenewal(text) {
-    const re = /(renew(s|al)?( on| date)?|next (billing|payment|charge|bill)( date)?|valid (till|until|through)|will be charged on|expires? on|until)\s*:?\s*/gi;
+  function dateAfter(text, re) {
     for (const m of text.matchAll(re)) {
       const d = parseLooseDate(text.slice(m.index + m[0].length, m.index + m[0].length + 40));
       if (d) return d;
     }
     return null;
+  }
+  const findRenewal = text => dateAfter(text, /(auto-?renews?( on)?|renew(s|al)?( on| date)?|next (billing|payment|charge|bill)( date)?|will be charged on)\s*:?\s*/gi);
+  const findValidTill = text => dateAfter(text, /(valid (till|until|through)|active (till|until))\s*:?\s*/gi);
+  const findEndDate = text => dateAfter(text, /(expires?( on)?|expiring( on)?|will (end|expire)( on)?|ends on|access (ends|until)( on)?|valid (till|until|through)|until)\s*:?\s*/gi);
+
+  /* Only trust "monthly / yearly" words in the subject or close to the price, not in footers */
+  function cycleText(subject, text, amount) {
+    const near = amount ? text.slice(Math.max(0, amount.i - 160), amount.i + 160) : text.slice(0, 300);
+    return `${subject || ''} ${near}`;
   }
 
   function findPayment(text) {
@@ -128,17 +150,31 @@
     const dom = senderDomain(msg.from);
     const text = `${msg.subject || ''}\n${msg.text || ''}`.replace(/\s+/g, ' ');
     if (!dom || NOT_A_RECEIPT.test(text)) return null;
-    const rule = RULES.find(r => domainMatches(dom, r.domains) && r.need.test(text) && !(r.skip && r.skip.test(text)));
+    const subject = msg.subject || '';
+    const rule = RULES.find(r => domainMatches(dom, r.domains) && (!r.subj || r.subj.test(subject)) && r.need.test(text) && !(r.skip && r.skip.test(text)));
     if (!rule) return null;
+    const cancelled = CANCELLED.test(subject) || /subscription (has been |was )?cancel/i.test(text);
+    if (!cancelled && (!ACCOUNT_SUBJECT.test(subject) || (PROMO.test(subject) && !PAID_SUBJECT.test(subject)))) {
+      return { name: rule.name, subject: subject.slice(0, 140), date: msg.date, promo: true, amount: null, currency: null, zero: false, free: false,
+        partner: '', cycle: null, renewDate: null, expiring: false, endDate: null, cancelled: false, payment: '', bank: '', last4: '' };
+    }
     const amount = findAmount(text);
-    const cancelled = CANCELLED.test(msg.subject || '') || /subscription (has been |was )?cancel/i.test(text);
+    const expiring = !cancelled && EXPIRING.test(text);
+    const partnerHit = text.match(PARTNER);
+    const partnerBilled = PARTNER_BILLED.test(text) || (!!partnerHit && !amount);
     return {
       name: rule.name,
+      subject: subject.slice(0, 140),
       date: msg.date,
       amount: amount ? amount.v : null,
       currency: amount ? amount.cur : null,
-      cycle: findCycle(text),
-      renewDate: findRenewal(text),
+      zero: !amount && ZERO_AMOUNT.test(text),
+      free: FREE_TEXT.test(text),
+      partner: partnerBilled ? (partnerHit ? partnerHit[1].replace(/\b\w/g, c => c.toUpperCase()) : 'partner') : '',
+      cycle: findCycle(cycleText(subject, text, amount)),
+      renewDate: findRenewal(text) || (expiring ? null : findValidTill(text)),
+      expiring,
+      endDate: expiring ? findEndDate(text) : null,
       cancelled,
       ...findPayment(text),
     };
@@ -149,10 +185,16 @@
     const by = new Map();
     receipts.filter(Boolean).forEach(r => { if (!by.has(r.name)) by.set(r.name, []); by.get(r.name).push(r); });
     const out = [];
-    for (const [name, list] of by) {
-      list.sort((a, b) => (a.date < b.date ? 1 : -1));
+    for (const [name, all] of by) {
+      all.sort((a, b) => (a.date < b.date ? 1 : -1));
+      const list = all.filter(r => !r.promo);   // ads never decide price or status
+      if (!list.length) continue;                // only ads → nothing to suggest
       const newest = list[0];
       const paid = list.filter(r => !r.cancelled);
+      // A cancellation stands unless a later email shows it's active again (a payment, free/partner plan, renewal date)
+      const lastCancel = list.find(r => r.cancelled);
+      const showsActive = r => !r.cancelled && (r.amount || r.zero || r.free || r.partner || r.renewDate || r.expiring);
+      const isCancelled = !!lastCancel && !list.some(r => showsActive(r) && r.date > lastCancel.date);
       const withAmt = paid.find(r => r.amount) || list.find(r => r.amount);
 
       let cycle = newest.cycle || (paid.find(r => r.cycle) || {}).cycle || null;
@@ -168,19 +210,33 @@
 
       const lastPaid = paid[0] ? paid[0].date : null;
       const tooOld = lastPaid && dayDiff(lastPaid, todayISO) > (cycle === 'Yearly' ? 400 : 75);
+
+      // Recent emails decide whether it's free / partner-billed / ending
+      const recent = paid.filter(r => dayDiff(r.date, todayISO) <= 120);
+      const partner = (recent.find(r => r.partner) || {}).partner || '';
+      const free = !!partner || recent.some(r => r.free && !r.amount) ||
+        (recent.length > 0 && recent.some(r => r.zero) && recent.every(r => r.zero || r.amount == null));
+      const endMail = recent.find(r => r.expiring && r.endDate);
+      const endDate = endMail ? endMail.endDate : null;
+
       let status = 'new';
       if (trackedNames.includes(name)) status = 'tracked';
-      else if (newest.cancelled) status = 'cancelled';
+      else if (isCancelled || (endDate && endDate < todayISO)) status = 'cancelled';
+      else if (endDate) status = 'ending';
+      else if (free) status = 'free';
       else if (!lastPaid || tooOld) status = 'stale';
+      if (cost == null && (free || list.some(r => r.zero || r.free))) cost = 0;
 
       const pay = paid.find(r => r.last4) || paid.find(r => r.payment === 'Card') || anchor;
       out.push({
-        name, cost, converted, cycle, date: next, status,
+        name, cost, converted, cycle, date: status === 'ending' ? endDate : next, status,
+        free, partner, endDate,
         payment: pay.payment, bank: pay.bank, last4: pay.last4,
         receipts: list.length, lastDate: newest.date,
+        sources: all.slice(0, 6).map(r => ({ subject: r.subject, date: r.date, amount: r.amount, currency: r.currency, zero: r.zero, ad: !!r.promo, cancelled: r.cancelled })),
       });
     }
-    const order = { new: 0, stale: 1, cancelled: 2, tracked: 3 };
+    const order = { new: 0, ending: 1, free: 2, stale: 3, cancelled: 4, tracked: 5 };
     return out.sort((a, b) => order[a.status] - order[b.status] || (b.cost || 0) - (a.cost || 0));
   }
 
@@ -269,6 +325,7 @@
       { from:'Apple <no_reply@email.apple.com>', subject:'Your receipt from Apple', date:ago(42), text:'Apple Music Individual (Monthly) ₹119.00 Total ₹119.00' },
       { from:'OpenAI <noreply@tm.openai.com>', subject:'Your ChatGPT Plus receipt', date:ago(20), text:'ChatGPT Plus Subscription Qty 1 $20.00 Total $20.00 Amount paid $20.00 Visa ending in 1107' },
       { from:'Zomato <noreply@zomato.com>', subject:'Welcome to Zomato Gold! Your membership is active', date:ago(95), text:'Zomato Gold 12 months membership. Amount paid: Rs. 30 via UPI. Valid till ' + addCycle(ago(95), 'Yearly') },
+      { from:'ZEE5 <noreply@zee5.com>', subject:'Your ZEE5 Premium subscription is active', date:ago(18), text:'Your Premium plan is included with your Airtel Postpaid plan. Amount: ₹0. Enjoy unlimited streaming.' },
       { from:'Sony LIV <noreply@sonyliv.com>', subject:'Your Sony LIV subscription has been cancelled', date:ago(30), text:'Your Premium subscription has been cancelled and will not renew.' },
       { from:'Sony LIV <noreply@sonyliv.com>', subject:'Payment successful - Sony LIV Premium', date:ago(60), text:'Premium Monthly plan ₹299 charged via UPI' },
       { from:'Spotify <no-reply@spotify.com>', subject:'Your Spotify Premium receipt', date:ago(27), text:'Premium Individual ₹119.00 per month. Total ₹119.00 charged to UPI' },
