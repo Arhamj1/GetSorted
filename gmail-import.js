@@ -69,8 +69,8 @@
   const iso = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   const parseISO = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
   const dayDiff = (a, b) => Math.round((parseISO(b) - parseISO(a)) / 86400000);
-  function addCycle(s, cycle) {
-    const d = parseISO(s), day = d.getDate();
+  function addCycle(s, cycle, anchorDay) {
+    const d = parseISO(s), day = anchorDay || d.getDate();
     d.setDate(1);
     if (cycle === 'Yearly') d.setFullYear(d.getFullYear() + 1); else d.setMonth(d.getMonth() + 1);
     d.setDate(Math.min(day, new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate()));
@@ -206,7 +206,7 @@
 
       const anchor = paid[0] || newest;
       let next = anchor.renewDate && anchor.renewDate >= todayISO ? anchor.renewDate : null;
-      if (!next) { next = anchor.date; let g = 0; while (next < todayISO && g++ < 60) next = addCycle(next, cycle); }
+      if (!next) { next = anchor.date; const ad = parseISO(next).getDate(); let g = 0; while (next < todayISO && g++ < 60) next = addCycle(next, cycle, ad); }
 
       const lastPaid = paid[0] ? paid[0].date : null;
       const tooOld = lastPaid && dayDiff(lastPaid, todayISO) > (cycle === 'Yearly' ? 400 : 75);
@@ -263,8 +263,8 @@
       client.requestAccessToken();
     });
   }
-  async function gmail(token, path) {
-    const r = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/' + path, { headers: { Authorization: 'Bearer ' + token } });
+  async function gmail(token, path, signal) {
+    const r = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/' + path, { headers: { Authorization: 'Bearer ' + token }, signal });
     if (!r.ok) throw new Error(r.status === 403 ? 'Gmail access was not granted.' : `Gmail request failed (${r.status}).`);
     return r.json();
   }
@@ -287,33 +287,35 @@
       .replace(/&nbsp;/g, ' ').replace(/&#8377;|&#x20b9;/gi, '₹').replace(/&amp;/g, '&').replace(/&[a-z]+;/g, ' ');
   }
 
-  async function scanGmail(token, onProgress) {
+  async function scanGmail(token, onProgress, signal) {
     const q = `from:(${ALL_DOMAINS.join(' OR ')}) newer_than:${LOOKBACK_DAYS}d -in:chats`;
     const ids = [];
     let pageToken = '';
     do {
-      const res = await gmail(token, `messages?maxResults=100&q=${encodeURIComponent(q)}${pageToken ? '&pageToken=' + pageToken : ''}`);
+      const res = await gmail(token, `messages?maxResults=100&q=${encodeURIComponent(q)}${pageToken ? '&pageToken=' + pageToken : ''}`, signal);
       (res.messages || []).forEach(m => ids.push(m.id));
       pageToken = res.nextPageToken || '';
     } while (pageToken && ids.length < MAX_MESSAGES);
     const list = ids.slice(0, MAX_MESSAGES);
-    onProgress(0, list.length);
+    const total = list.length;
+    onProgress(0, total);
 
     const receipts = [];
     let done = 0;
     const worker = async () => {
-      while (list.length) {
+      while (list.length && !(signal && signal.aborted)) {
         const id = list.shift();
         try {
-          const m = await gmail(token, `messages/${id}?format=full`);
+          const m = await gmail(token, `messages/${id}?format=full`, signal);
           const h = n => ((m.payload.headers || []).find(x => x.name.toLowerCase() === n) || {}).value || '';
           const d = new Date(Number(m.internalDate));
           receipts.push(parseReceipt({ from: h('from'), subject: h('subject'), date: iso(d), text: bodyText(m.payload) || m.snippet }));
         } catch (e) { /* skip unreadable message */ }
-        onProgress(++done, done + list.length);
+        onProgress(++done, total);
       }
     };
     await Promise.all([worker(), worker(), worker(), worker(), worker()]);
+    if (signal && signal.aborted) throw new DOMException('Scan cancelled', 'AbortError');
     return receipts.filter(Boolean);
   }
 

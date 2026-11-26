@@ -1,0 +1,162 @@
+/* ═══════════════════════════════════════════════════════════════
+   GetSorted colour themes (preview)
+   Default "Midnight" lives in index.html. These override it when
+   <html data-theme="seal"> or <html data-theme="royal"> is set.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ─── Theme switcher pill (all themes) ─── */
+/* Sits below dialogs (z-index 100) and hides while one is open, so it never covers their buttons */
+body:has(.overlay.open) .theme-switch{display:none}
+#appPage.show{padding-bottom:64px}
+.theme-switch{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:90;display:flex;gap:4px;padding:5px;border-radius:999px;
+  background:rgba(20,20,24,.82);backdrop-filter:blur(16px) saturate(150%);-webkit-backdrop-filter:blur(16px) saturate(150%);
+  border:1px solid rgba(255,255,255,.14);box-shadow:0 18px 50px -12px rgba(0,0,0,.55)}
+.theme-switch button{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 14px 0 8px;border-radius:999px;font-size:.88rem;font-weight:600;color:rgba(255,255,255,.7);transition:background .2s,color .2s}
+.theme-switch button:hover{color:#fff;background:rgba(255,255,255,.08)}
+.theme-switch button[aria-pressed="true"]{color:#fff;background:rgba(255,255,255,.16)}
+.theme-switch i{width:20px;height:20px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(255,255,255,.3)}
+@media (max-width:560px){.theme-switch{bottom:12px}.theme-switch button{padding:0 10px 0 6px;font-size:.8rem}}
+
+
+/* ═══════════════ SEAL — Seal Blue · Navy · Crimson Pink ═══════════════
+   Airy pale-blue glass, navy depth, a pink glow, fluted-glass ribs */
+:root[data-theme="seal"]{
+  color-scheme:light;
+  --bg:#E4F4FC; --panel:rgba(255,255,255,.6); --panel-2:rgba(255,255,255,.78); --panel-3:#E6F4FB;
+  --line:rgba(7,45,89,.08); --line-2:rgba(7,45,89,.14); --line-3:rgba(7,45,89,.26);
+  --text:#072D59; --text-2:#30557F; --text-3:#5D7DA1;
+  --accent:#FD6E88; --accent-ink:#FFFFFF; --accent-soft:rgba(253,110,136,.14);
+  --warn:#A9530C; --warn-soft:rgba(217,130,43,.12);
+  --ok:#14966A; --ok-soft:rgba(20,150,106,.12);
+  --shadow:0 1px 0 rgba(255,255,255,.8) inset,0 28px 60px -30px rgba(7,45,89,.4);
+  --chart-text:#5D7DA1; --chart-grid:rgba(7,45,89,.07); --chart-bar:rgba(7,45,89,.13); --chart-empty:rgba(7,45,89,.08);
+  --chart-hi:#FD6E88; --chart-hi-soft:rgba(253,110,136,.45); --chart-cut:#F3FAFE;
+  --tip-bg:#072D59; --tip-border:rgba(255,255,255,.12); --tip-title:#A9CBE6; --tip-body:#FFFFFF;
+}
+[data-theme="seal"] body{background:linear-gradient(180deg,#EEF9FE 0%,#DBF2FC 38%,#C4E2F4 75%,#A9CDE8 100%) fixed}
+/* Soft navy and pink glows */
+[data-theme="seal"] body::before{
+  background:
+    radial-gradient(560px 460px at 84% 4%,rgba(253,110,136,.72),transparent 62%),
+    radial-gradient(520px 420px at 8% 22%,rgba(253,110,136,.32),transparent 64%),
+    radial-gradient(700px 600px at 100% 32%,rgba(7,45,89,.78),transparent 64%),
+    radial-gradient(640px 460px at 62% 70%,rgba(253,110,136,.3),transparent 66%),
+    radial-gradient(820px 520px at -6% 104%,rgba(7,45,89,.38),transparent 62%),
+    radial-gradient(620px 420px at 34% 98%,rgba(253,110,136,.42),transparent 64%);
+  filter:blur(6px)}
+[data-theme="seal"] body::after{opacity:.05}
+/* Fluted-glass ribs over the glow (top right, like the reference) */
+[data-theme="seal"] #appPage::before,[data-theme="seal"] #loginPage::before{
+  content:'';position:fixed;top:0;right:0;width:min(44vw,620px);height:min(78vh,640px);z-index:-1;pointer-events:none;
+  background:repeating-linear-gradient(90deg,rgba(255,255,255,.34) 0,rgba(255,255,255,.04) 9px,rgba(7,45,89,.07) 26px,rgba(255,255,255,.34) 30px);
+  backdrop-filter:blur(16px) saturate(140%);-webkit-backdrop-filter:blur(16px) saturate(140%);
+  -webkit-mask-image:linear-gradient(200deg,#000 30%,transparent 78%);mask-image:linear-gradient(200deg,#000 30%,transparent 78%)}
+
+/* Glass surfaces */
+[data-theme="seal"] .topbar{background:rgba(238,249,254,.62);border-bottom-color:rgba(7,45,89,.08)}
+[data-theme="seal"] .panel,[data-theme="seal"] .kpis{backdrop-filter:blur(22px) saturate(150%);-webkit-backdrop-filter:blur(22px) saturate(150%);border-color:rgba(255,255,255,.75)}
+[data-theme="seal"] .kpi+.kpi{border-left-color:rgba(7,45,89,.08)}
+[data-theme="seal"] .overlay{background:rgba(7,45,89,.28)}
+[data-theme="seal"] .modal{background:rgba(246,252,255,.94);backdrop-filter:blur(24px);border-color:rgba(255,255,255,.9);box-shadow:0 40px 100px -24px rgba(7,45,89,.45)}
+[data-theme="seal"] .modal .input,[data-theme="seal"] .modal .toggle-group,[data-theme="seal"] .modal .bank-trigger,[data-theme="seal"] .modal .dd.block .dd-btn{background:#FFFFFF}
+[data-theme="seal"] .dd-menu,[data-theme="seal"] .menu{background:rgba(255,255,255,.94);box-shadow:0 28px 70px -16px rgba(7,45,89,.4)}
+[data-theme="seal"] .bank-panel{background:#FFFFFF;box-shadow:0 24px 60px -16px rgba(7,45,89,.35)}
+[data-theme="seal"] .toast{background:#072D59;color:#fff;border-color:transparent}
+[data-theme="seal"] .avatar{background:linear-gradient(140deg,#FFFFFF,#DBF2FC);color:#072D59}
+[data-theme="seal"] .pv-card{background:rgba(255,255,255,.7)}
+[data-theme="seal"] .svc-opt{background:rgba(255,255,255,.7)}
+[data-theme="seal"] .toggle-group button[aria-pressed="true"]{background:#072D59;color:#fff;box-shadow:none}
+[data-theme="seal"] .filter.on{background:#072D59;color:#fff;border-color:#072D59}
+
+/* Buttons: crimson pill like the reference CTA */
+[data-theme="seal"] .btn-primary{background:linear-gradient(180deg,#FF8CA1,#F5557A);color:#fff;text-shadow:none;box-shadow:0 0 0 1px rgba(253,110,136,.45),0 10px 26px -10px rgba(245,85,122,.65)}
+[data-theme="seal"] .btn-primary:hover{background:#FF7D95}
+[data-theme="seal"] .btn-secondary{background:rgba(255,255,255,.75)}
+
+/* Type: thin roman + bold italic, as in "Visionary Intelligence" */
+[data-theme="seal"] .greet h1{font-weight:300;letter-spacing:-.045em}
+[data-theme="seal"] .greet h1 em{color:#072D59;font-weight:400}
+[data-theme="seal"] .kpi-val{font-weight:600;color:#072D59}
+[data-theme="seal"] .kpi:first-child .kpi-val{background:linear-gradient(180deg,#0B3C74,#072D59);-webkit-background-clip:text;background-clip:text;color:transparent}
+[data-theme="seal"] .hero-title em{color:#FD6E88}
+[data-theme="seal"] .chip.danger{color:#D63A57}
+/* Readable text on the light background: navy on the pink demo bar,
+   category percentages darkened towards navy */
+[data-theme="seal"] .demo-bar,[data-theme="seal"] .demo-bar button{color:#072D59}
+[data-theme="seal"] .lg-pct{color:color-mix(in srgb,var(--c) 55%,#072D59)}
+/* Logo: the white curve becomes navy on the light background */
+[data-theme="seal"] #gsMark path[stroke="#F4F4F6"]{stroke:#072D59}
+
+
+/* Seal date picker: solid white with navy text */
+[data-theme="seal"] .flatpickr-calendar{background:#FFFFFF!important;border-color:rgba(7,45,89,.12)!important;box-shadow:0 30px 70px -20px rgba(7,45,89,.35)!important}
+[data-theme="seal"] .flatpickr-months .flatpickr-month,[data-theme="seal"] .flatpickr-current-month,[data-theme="seal"] .flatpickr-monthDropdown-months,[data-theme="seal"] .flatpickr-current-month input.cur-year,[data-theme="seal"] span.flatpickr-weekday{color:#072D59!important;fill:#072D59!important}
+[data-theme="seal"] .flatpickr-months .flatpickr-prev-month,[data-theme="seal"] .flatpickr-months .flatpickr-next-month{color:#072D59!important;fill:#072D59!important}
+[data-theme="seal"] .flatpickr-months svg{fill:#072D59!important}
+[data-theme="seal"] .flatpickr-day{color:#072D59!important}
+[data-theme="seal"] .flatpickr-day.prevMonthDay,[data-theme="seal"] .flatpickr-day.nextMonthDay,[data-theme="seal"] .flatpickr-day.flatpickr-disabled{color:rgba(7,45,89,.3)!important}
+[data-theme="seal"] .flatpickr-day:hover:not(.selected){background:rgba(7,45,89,.06)!important;border-color:transparent!important}
+[data-theme="seal"] .flatpickr-day.today{border-color:rgba(253,110,136,.6)!important}
+[data-theme="seal"] .flatpickr-day.selected{color:#FFFFFF!important}
+
+/* ═══════════════ ROYAL — Royal Blue · White · Sunglow Gold ═══════════════
+   Deep blue, full-page fluted glass, a blurred gold glow behind it */
+:root[data-theme="royal"]{
+  --bg:#1B3B7D; --panel:rgba(255,255,255,.07); --panel-2:rgba(255,255,255,.13); --panel-3:rgba(255,255,255,.2);
+  --line:rgba(255,255,255,.14); --line-2:rgba(255,255,255,.22); --line-3:rgba(255,255,255,.38);
+  --text:#FCFFFF; --text-2:rgba(252,255,255,.84); --text-3:rgba(252,255,255,.64);
+  --accent:#EDB158; --accent-ink:#10264F; --accent-soft:rgba(237,177,88,.2);
+  --warn:#FFD08A; --warn-soft:rgba(255,208,138,.18);
+  --danger:#FF6B78; --danger-soft:rgba(255,107,120,.2); --danger-text:#FFD3D7;
+  --shadow:0 1px 0 rgba(255,255,255,.14) inset,0 30px 70px -30px rgba(8,24,62,.7);
+  --chart-text:rgba(252,255,255,.72); --chart-grid:rgba(255,255,255,.1); --chart-bar:rgba(255,255,255,.22); --chart-empty:rgba(255,255,255,.14);
+  --chart-hi:#EDB158; --chart-hi-soft:rgba(237,177,88,.55); --chart-cut:#1C3D80;
+  --tip-bg:#132C5E; --tip-border:rgba(255,255,255,.16); --tip-title:rgba(252,255,255,.7); --tip-body:#FCFFFF;
+}
+[data-theme="royal"] body{background:linear-gradient(165deg,#2A5BC4 0%,#234C9F 34%,#1B3B7D 70%,#12285A 100%) fixed}
+/* Blurred gold "motion" glow with a dark navy core, like the reference */
+[data-theme="royal"] body::before{
+  background:
+    radial-gradient(440px 340px at 26% 34%,rgba(255,206,120,.95),transparent 66%),
+    radial-gradient(560px 300px at 38% 52%,rgba(237,177,88,.75),transparent 68%),
+    radial-gradient(360px 420px at 52% 30%,rgba(6,16,40,.8),transparent 66%),
+    radial-gradient(700px 500px at 92% 90%,rgba(237,177,88,.22),transparent 66%);
+  filter:blur(46px)}
+/* Full-page fluted glass ribs */
+[data-theme="royal"] body::after{opacity:1;
+  background:repeating-linear-gradient(90deg,rgba(255,255,255,.075) 0,rgba(255,255,255,0) 8px,rgba(8,24,62,.12) 20px,rgba(255,255,255,.075) 22px);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+
+/* Frosted glass surfaces */
+[data-theme="royal"] .topbar{background:rgba(22,48,104,.6);border-bottom-color:rgba(255,255,255,.12)}
+[data-theme="royal"] .panel,[data-theme="royal"] .kpis{backdrop-filter:blur(26px) saturate(160%);-webkit-backdrop-filter:blur(26px) saturate(160%);border-color:rgba(255,255,255,.2)}
+[data-theme="royal"] .overlay{background:rgba(4,12,32,.55)}
+[data-theme="royal"] .modal{background:rgba(24,52,112,.94);backdrop-filter:blur(28px) saturate(160%);border-color:rgba(255,255,255,.18);box-shadow:0 40px 100px -24px rgba(2,8,24,.9)}
+[data-theme="royal"] .dd-menu,[data-theme="royal"] .menu{background:rgba(18,42,92,.97);border-color:rgba(255,255,255,.18)}
+[data-theme="royal"] .bank-panel{background:rgba(18,42,92,.98)}
+/* Date picker: solid so the form behind doesn't show through */
+[data-theme="royal"] .flatpickr-calendar{background:#16326A!important;border-color:rgba(255,255,255,.18)!important;box-shadow:0 30px 70px -16px rgba(2,8,24,.9)!important}
+[data-theme="royal"] .flatpickr-day.today{border-color:rgba(237,177,88,.6)!important}
+[data-theme="royal"] .flatpickr-day:hover:not(.selected){background:rgba(255,255,255,.1)!important;border-color:transparent!important}
+[data-theme="royal"] .toast{background:#FCFFFF;color:#1B3F8A;border-color:transparent}
+[data-theme="royal"] .avatar{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.3)}
+[data-theme="royal"] .pv-card{background:rgba(255,255,255,.1)}
+[data-theme="royal"] .toggle-group button[aria-pressed="true"]{background:#FCFFFF;color:#1E4AA0;box-shadow:none}
+[data-theme="royal"] .filter.on{background:#FCFFFF;color:#1E4AA0;border-color:#FCFFFF}
+[data-theme="royal"] .svc-opt[aria-pressed="true"]{box-shadow:0 0 0 3px rgba(237,177,88,.35)}
+
+/* Buttons: white pill like "Try for Free", gold accents */
+[data-theme="royal"] .btn-primary{background:#FCFFFF;color:#1E4AA0;text-shadow:none;box-shadow:0 10px 30px -10px rgba(6,18,48,.6)}
+[data-theme="royal"] .btn-primary:hover{background:#FFF6E6}
+[data-theme="royal"] .btn-secondary{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.26)}
+
+/* Type */
+/* Greeting and the big monthly number sit on light blue and the gold glow,
+   so they use deep navy ink instead of white/cream to stand out */
+[data-theme="royal"] .greet h1{font-weight:600;letter-spacing:-.045em;color:#FFD58C;text-shadow:0 2px 24px rgba(6,16,40,.45)}
+[data-theme="royal"] .greet h1 em{color:#FFFFFF;font-weight:400}
+[data-theme="royal"] .kpi:first-child .kpi-val{color:#0B1D47;font-weight:800}
+[data-theme="royal"] .hero-title em{color:#EDB158}
+[data-theme="royal"] .chip.danger{color:#FFC2C6}
+/* Logo: the violet bar becomes gold so it shows on blue */
+[data-theme="royal"] #gsMark path[stroke="#8B7CFF"]{stroke:#EDB158}

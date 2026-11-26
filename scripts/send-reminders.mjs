@@ -33,8 +33,9 @@ const toUTC = iso => { const [y, m, d] = iso.split('-').map(Number); return Date
 const fromUTC = t => new Date(t).toISOString().slice(0, 10);
 const daysBetween = (a, b) => Math.round((toUTC(b) - toUTC(a)) / 86400000);
 const shiftDays = (iso, n) => fromUTC(toUTC(iso) + n * 86400000);
-function addCycle(iso, cycle) {
-  const [y, m, d] = iso.split('-').map(Number);
+function addCycle(iso, cycle, anchorDay) {
+  const [y, m, dd] = iso.split('-').map(Number);
+  const d = anchorDay || dd;
   const ny = cycle === 'Yearly' ? y + 1 : y + (m === 12 ? 1 : 0);
   const nm = cycle === 'Yearly' ? m : (m % 12) + 1;
   const last = new Date(Date.UTC(ny, nm, 0)).getUTCDate();
@@ -46,7 +47,7 @@ function nextBilling(sub, today) {
   let d = sub.date, guard = 0;
   while (d < today) {
     if (!sub.autopay) return null;
-    d = addCycle(d, sub.cycle);
+    d = addCycle(d, sub.cycle, sub.anchorDay || Number(sub.date.slice(8)));
     if (++guard > 400) return null;
   }
   return d;
@@ -191,11 +192,23 @@ async function loadFirestore() {
     if (!byUser.has(email)) byUser.set(email, { email, userRef, subs: [] });
     byUser.get(email).subs.push({ id: doc.id, ...doc.data(), ref: doc.ref });
   });
-  const users = [...byUser.values()];
+  let users = [...byUser.values()];
   if (users.length) {
     const prefDocs = await db.getAll(...users.map(u => u.userRef));
     prefDocs.forEach((d, i) => { users[i].prefs = d.exists ? d.data() : {}; });
   }
+
+  // Only email addresses whose owner has verified them. Otherwise anyone could sign up
+  // with someone else's address and have this job email them.
+  const { getAuth } = await import('firebase-admin/auth');
+  const verified = new Set();
+  for (let i = 0; i < users.length; i += 100) {
+    const res = await getAuth().getUsers(users.slice(i, i + 100).map(u => ({ email: u.email })));
+    res.users.forEach(r => { if (r.emailVerified && r.email) verified.add(r.email.toLowerCase()); });
+  }
+  const before = users.length;
+  users = users.filter(u => verified.has(String(u.email).toLowerCase()));
+  if (before !== users.length) console.log(`Skipping ${before - users.length} unverified or unknown address(es).`);
   return { users, markSent: (ref, key) => ref.update({ reminderLog: FieldValue.arrayUnion(key) }) };
 }
 

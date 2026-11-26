@@ -122,13 +122,43 @@ To use real data, set the same three values as environment variables and run `no
 
 ### Firestore rules
 
-The job uses the service account, so your security rules don't affect it. The in-app reminders toggle writes to `users/{email}` itself, not only to the `subscriptions` under it. If saving the toggle fails, make sure your rules let a signed-in user write their own user document, for example:
+The job uses the service account, so your security rules don't affect it. It only emails addresses that have been verified in Firebase Authentication.
+
+Data is stored under `users/{email}`, so the rules must check that the email is **verified**. Otherwise someone could sign up with another person's address and write data under it. Paste these into Firebase console → Firestore → Rules:
 
 ```
-match /users/{email}/{document=**} {
-  allow read, write: if request.auth != null && request.auth.token.email == email;
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function owner(email) {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email == email;
+    }
+    // Reminder preference
+    match /users/{email} {
+      allow read, delete: if owner(email);
+      allow create, update: if owner(email)
+        && request.resource.data.keys().hasOnly(['emailReminders', 'email', 'updatedAt'])
+        && request.resource.data.emailReminders is bool;
+    }
+    // Subscriptions
+    match /users/{email}/subscriptions/{id} {
+      allow read, delete: if owner(email);
+      allow create, update: if owner(email)
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 60
+        && request.resource.data.cost is number
+        && request.resource.data.cost >= 0
+        && request.resource.data.cost < 10000000
+        && request.resource.data.keys().size() <= 20;
+    }
+  }
 }
 ```
+
+Accounts created before email verification was added will see a "Verify your email" screen the next time they log in.
 
 ### Limits
 

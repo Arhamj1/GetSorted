@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<!-- Content Security Policy: only these hosts may serve scripts, styles, fonts and API calls.
+     'unsafe-inline' is still needed for the app's inline <script> blocks. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://www.gstatic.com https://accounts.google.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com https://accounts.google.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.googleapis.com https://accounts.google.com https://www.gstatic.com wss://*.firebaseio.com https://*.firebaseio.com; frame-src https://accounts.google.com https://*.firebaseapp.com; object-src 'none'; base-uri 'self'; form-action 'self'" />
 <title>GetSorted — Every subscription, sorted.</title>
 <meta name="description" content="GetSorted tracks your recurring subscriptions, forecasts what you'll spend and warns you before every renewal." />
 <meta name="theme-color" content="#09090B" />
@@ -10,15 +13,22 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400..800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css" />
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/themes/dark.css" />
-<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<!-- Third-party files are pinned to exact versions and checked with SRI hashes,
+     so a tampered CDN copy is refused instead of run -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css" integrity="sha384-RkASv+6KfBMW9eknReJIJ6b3UnjKOKC5bOUaNgIY778NFbQ8MtWq9Lr/khUgqtTt" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/themes/dark.css" integrity="sha384-heUUtXw0Djj2DElfLOVPlASSWFKNL3JDY6s3FEqQD03GYyWOeophY5DsfEG40sYX" crossorigin="anonymous" />
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js" integrity="sha384-5JqMv4L/Xa0hfvtF06qboNdhvuYXUku9ZrhZh3bSk8VXF0A/RuSLHpLsSV9Zqhl6" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" integrity="sha384-9nhczxUqK87bcKHh20fSQcTGD4qq5GhayNYSYWqwBkINBhOfQLg/P5HG5lF1urn4" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/gsap.min.js" integrity="sha384-HOvlOYPIs/zjoIkWUGXkVmXsjr8GuZLV+Q+rcPwmJOVZVpvTSXQChiN4t9Euv9Vc" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/ScrollTrigger.min.js" integrity="sha384-P8VzCVnT9NBUkMrpcIZrJbA7EBjJvh/fJS6PmP+4nLIM284DtsImIv8D0fFjIkeh" crossorigin="anonymous"></script>
 <style>
 :root{
   --bg:#09090B; --panel:#111114; --panel-2:#17171B; --panel-3:#1E1E23;
   --line:rgba(255,255,255,.07); --line-2:rgba(255,255,255,.12); --line-3:rgba(255,255,255,.2);
   --text:#F5F5F7; --text-2:#C2C2CC; --text-3:#9A9AA6;
+  --chart-text:#9A9AA6; --chart-grid:rgba(255,255,255,.05); --chart-bar:rgba(255,255,255,.12); --chart-empty:rgba(255,255,255,.08);
+  --chart-hi:#8B7CFF; --chart-hi-soft:rgba(139,124,255,.45); --chart-cut:#111114;
+  --tip-bg:#1E1E23; --tip-border:rgba(255,255,255,.12); --tip-title:#C2C2CC; --tip-body:#F5F5F7;
   --accent:#8B7CFF; --accent-ink:#FFFFFF; --accent-soft:rgba(139,124,255,.1);
   --danger:#F2555A; --danger-soft:rgba(242,85,90,.12);
   --warn:#F5B94A; --warn-soft:rgba(245,185,74,.12);
@@ -27,7 +37,7 @@
   --r-sm:8px; --r:12px; --r-lg:18px; --r-xl:24px;
   --sans:'Manrope',ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;
   --mono:'Manrope',ui-sans-serif,system-ui,sans-serif;
-  --serif:'Instrument Serif',Georgia,serif;
+  --serif:'Instrument Serif Fit','Instrument Serif',Georgia,serif;
   --ease:cubic-bezier(.22,1,.36,1);
   --shadow:0 1px 0 rgba(255,255,255,.04) inset,0 20px 50px -20px rgba(0,0,0,.6);
 }
@@ -39,6 +49,12 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.035;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
 ::selection{background:var(--accent);color:var(--accent-ink)}
+/* Instrument Serif with Manrope's vertical metrics, so a selection that runs
+   from sans text into a serif word is one even band instead of a step */
+@font-face{font-family:'Instrument Serif Fit';font-style:italic;font-weight:400;font-display:swap;src:url(https://fonts.gstatic.com/s/instrumentserif/v5/jizHRFtNs2ka5fXjeivQ4LroWlx-6zAjjH7M.woff2) format('woff2');ascent-override:107%;descent-override:30%;line-gap-override:0%}
+@font-face{font-family:'Instrument Serif Fit';font-style:normal;font-weight:400;font-display:swap;src:url(https://fonts.gstatic.com/s/instrumentserif/v5/jizBRFtNs2ka5fXjeivQ4LroWlx-6zUTjg.woff2) format('woff2');ascent-override:107%;descent-override:30%;line-gap-override:0%}
+/* Italic serif words lean past their box; pad them so selection and clipping cover the slant */
+.hero-title em,.greet h1 em{padding-right:.1em;margin-right:-.04em}
 a{color:inherit}
 .num{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
@@ -67,8 +83,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 @keyframes spin{to{transform:rotate(360deg)}}
 
 /* ───────── Brand mark ───────── */
-.brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:1.2rem;letter-spacing:-.03em}
-.mark{width:34px;height:34px;flex-shrink:0;display:block;filter:drop-shadow(0 4px 12px rgba(139,124,255,.35))}
+.brand{display:flex;align-items:center;gap:12px;font-weight:700;font-size:1.6rem;letter-spacing:-.035em}
+.mark{width:46px;height:46px;flex-shrink:0;display:block;filter:drop-shadow(0 4px 12px rgba(139,124,255,.35))}
 
 /* ───────── Splash ───────── */
 #splash{position:fixed;inset:0;display:grid;place-items:center;z-index:50;background:var(--bg);transition:opacity .4s}
@@ -82,7 +98,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .auth-hero{position:relative;padding:40px 56px;display:flex;flex-direction:column;justify-content:space-between;border-right:1px solid var(--line);overflow:hidden}
 .auth-hero::before{content:'';position:absolute;inset:0;background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:56px 56px;mask-image:radial-gradient(ellipse 70% 60% at 50% 55%,#000 20%,transparent 75%);opacity:.6}
 .auth-hero>*{position:relative}
-.hero-title{font-family:var(--serif);font-weight:400;font-size:clamp(3rem,5.4vw,5.2rem);line-height:.95;letter-spacing:-.025em;max-width:11ch}
+.hero-title{font-family:var(--serif);font-weight:400;font-size:clamp(3rem,5.4vw,5.2rem);line-height:1.3;letter-spacing:-.025em;max-width:11ch}
 .hero-title em{color:var(--accent);font-style:italic}
 .hero-sub{color:var(--text-2);font-size:1.02rem;max-width:42ch;margin-top:20px}
 .preview{margin-top:44px;width:min(440px,100%);position:relative}
@@ -125,6 +141,18 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .auth-error{display:none;align-items:flex-start;gap:10px;padding:12px 14px;border-radius:var(--r);background:var(--danger-soft);border:1px solid rgba(242,85,90,.25);color:#FFB4B6;font-size:.92rem;margin-bottom:16px}
 .auth-error.show{display:flex;animation:rise .3s var(--ease)}
 .auth-error svg{width:16px;height:16px;flex-shrink:0;margin-top:2px}
+.auth-error.ok{background:color-mix(in srgb,var(--accent) 14%,transparent);border-color:color-mix(in srgb,var(--accent) 35%,transparent);color:var(--text)}
+.link-btn{background:none;border:0;padding:2px 0;font:inherit;font-size:.88rem;font-weight:600;color:var(--accent);cursor:pointer;justify-self:end;align-self:flex-end;text-underline-offset:3px}
+.link-btn:hover{text-decoration:underline}
+#loginPage.mode-signup #forgotBtn{display:none}
+.verify-panel{display:grid;gap:16px;text-align:center}
+.verify-panel[hidden]{display:none}
+.verify-panel p{color:var(--text-2);line-height:1.6}
+.verify-panel b{color:var(--text);word-break:break-all}
+.verify-ico{width:56px;height:56px;margin:0 auto;border-radius:16px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent)}
+.verify-ico svg{width:26px;height:26px}
+.verify-row{display:flex;justify-content:space-between;gap:12px}
+#loginPage.verifying #authSeg,#loginPage.verifying #authForm,#loginPage.verifying #authDivider,#loginPage.verifying #demoBtn,#loginPage.verifying .auth-card .fine{display:none}
 .divider{display:flex;align-items:center;gap:14px;color:var(--text-3);font-size:.86rem;margin:22px 0}
 .divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--line)}
 .fine{color:var(--text-3);font-size:.86rem;text-align:center;margin-top:22px}
@@ -167,7 +195,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .page{max-width:1360px;margin:0 auto;padding:48px 40px 110px}
 .greet{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:32px;flex-wrap:wrap}
 .greet small{color:var(--text-2);font-size:1rem;letter-spacing:.01em}
-.greet h1{font-size:clamp(2.2rem,4vw,3.3rem);font-weight:600;letter-spacing:-.04em;line-height:1.08;margin-top:8px}
+.greet h1{font-size:clamp(2.2rem,4vw,3.3rem);font-weight:600;letter-spacing:-.04em;line-height:1.34;margin-top:-4px}
 .greet h1 em{font-family:var(--serif);font-weight:400;font-style:italic;color:var(--text-2);letter-spacing:-.01em}
 
 /* KPI strip */
@@ -176,7 +204,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .kpi+.kpi{border-left:1px solid var(--line)}
 .kpi-label{display:flex;align-items:center;gap:10px;font-size:1.02rem;color:var(--text-2);font-weight:600}
 .kpi-label .dot{width:11px;height:11px;flex-shrink:0;border-radius:50%;background:var(--text-3)}
-.kpi-val{font-size:2.7rem;font-weight:700;letter-spacing:-.045em;margin:14px 0 6px;line-height:1.05}
+.kpi-val{font-size:2.7rem;font-weight:700;letter-spacing:-.045em;margin:6px 0 -2px;line-height:1.38}
 .kpi:first-child .kpi-val{font-size:3.9rem}
 .kpi:first-child .kpi-label .dot{background:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
 .kpi-sub{font-size:1rem;color:var(--text-2)}
@@ -201,18 +229,34 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .chart-empty{position:absolute;inset:0;display:none;place-items:center;text-align:center;color:var(--text-2);font-size:1.08rem}
 .chart-empty.show{display:grid}
 
-.donut-wrap{position:relative;width:230px;height:230px;margin:6px auto 26px}
-.donut-center{position:absolute;inset:0;display:grid;place-content:center;text-align:center;pointer-events:none}
-.donut-center small{font-size:.95rem;color:var(--text-2)}
-.donut-center b{font-size:2rem;font-weight:700;letter-spacing:-.04em}
-.legend{display:flex;flex-direction:column;gap:12px}
-.lg-row{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;font-size:1.02rem}
-.lg-dot{width:10px;height:10px;border-radius:3px}
-.lg-name{color:var(--text-2)}
-.lg-val{font-family:var(--mono);font-size:1rem;font-weight:600}
-.lg-val span{color:var(--text-3);margin-left:8px}
-.lg-bar{grid-column:2/4;height:4px;border-radius:2px;background:var(--panel-3);overflow:hidden;margin-top:-6px}
-.lg-bar i{display:block;height:100%;border-radius:2px;transform-origin:left;animation:grow .9s var(--ease) both}
+/* Category donut: hand-drawn SVG */
+.donut-wrap{position:relative;width:250px;height:250px;margin:4px auto 26px}
+.donut-wrap::before{content:"";position:absolute;inset:34px;border-radius:50%;background:radial-gradient(circle at 50% 35%,rgba(255,255,255,.07),transparent 70%);box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
+#catDonut{width:100%;height:100%;overflow:visible;transform:rotate(-90deg)}
+#catDonut .trk{fill:none;stroke:var(--chart-empty);stroke-width:2}
+#catDonut .tick{stroke:var(--chart-grid);stroke-width:1.2}
+#catDonut .seg{fill:none;stroke-width:18;stroke-linecap:butt;cursor:pointer;transition:stroke-width .35s var(--ease),opacity .3s,filter .3s;filter:drop-shadow(0 0 8px var(--glow))}
+#catDonut .seg.on{stroke-width:24;filter:drop-shadow(0 0 16px var(--glow))}
+#catDonut.focus .seg:not(.on){opacity:.28;filter:none}
+.donut-center{position:absolute;inset:0;display:grid;place-content:center;justify-items:center;text-align:center;pointer-events:none}
+.donut-center small{font-size:.74rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--text-3);transition:color .3s}
+.donut-center b{font-size:2.5rem;font-weight:700;letter-spacing:-.05em;line-height:1.38;margin:-4px 0 0}
+.donut-center b .cur{font-size:.55em;font-weight:600;vertical-align:.55em;margin-right:2px;color:var(--text-2)}
+.donut-center #donutSub{font-size:.86rem;color:var(--text-2);padding:3px 10px;border-radius:999px;background:var(--panel-2);border:1px solid var(--line)}
+.legend{display:flex;flex-direction:column;gap:4px;margin:0 -10px}
+.lg-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:4px 14px;align-items:center;padding:10px;border-radius:14px;cursor:default;transition:background .2s,opacity .3s}
+.lg-row:hover,.lg-row.on{background:var(--panel-2)}
+.legend.focus .lg-row:not(.on){opacity:.45}
+.lg-chip{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;background:linear-gradient(145deg,color-mix(in srgb,var(--c) 32%,transparent),color-mix(in srgb,var(--c) 12%,transparent));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--c) 40%,transparent)}
+.lg-chip i{width:12px;height:12px;border-radius:4px;background:var(--c);box-shadow:0 0 12px var(--c)}
+.lg-txt{display:flex;flex-direction:column;min-width:0}
+.lg-name{font-size:1.02rem;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lg-sub{font-size:.84rem;color:var(--text-3)}
+.lg-amt{display:flex;flex-direction:column;align-items:flex-end}
+.lg-amt b{font-size:1.05rem;font-weight:700;letter-spacing:-.02em}
+.lg-pct{font-size:.8rem;font-weight:600;color:var(--c);margin-top:1px}
+.lg-bar{grid-column:2/4;height:5px;border-radius:3px;background:var(--panel-3);overflow:hidden;margin-top:4px}
+.lg-bar i{display:block;height:100%;border-radius:3px;background:linear-gradient(90deg,color-mix(in srgb,var(--c) 55%,transparent),var(--c));box-shadow:0 0 10px color-mix(in srgb,var(--c) 60%,transparent);transform-origin:left;animation:grow 1s var(--ease) both;animation-delay:var(--d,0ms)}
 @keyframes grow{from{transform:scaleX(0)}}
 
 /* Subscriptions */
@@ -264,6 +308,12 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .row:last-child{border-bottom:0}
 .row:hover{background:var(--panel-2)}
 @keyframes rise{from{opacity:0;transform:translateY(8px)}}
+/* GSAP takes over these when motion.js is running */
+html.gsap .row{animation:none}
+html.gsap .modal{transition:none}
+html.gsap .btn,html.gsap .svc-opt,html.gsap .icon-btn{transition-property:background,border-color,color,box-shadow}
+.topbar{transition:background .3s,box-shadow .3s}
+.topbar.scrolled{box-shadow:0 12px 40px -18px rgba(0,0,0,.55)}
 .svc{display:flex;align-items:center;gap:14px;min-width:0}
 .tile{width:46px;height:46px;border-radius:13px;display:grid;place-items:center;flex-shrink:0;font-weight:650;font-size:1rem;letter-spacing:-.03em;color:#fff;background:var(--c,#333);box-shadow:inset 0 0 0 1px rgba(255,255,255,.14),inset 0 -10px 20px rgba(0,0,0,.18)}
 .tile.sm{width:30px;height:30px;border-radius:9px;font-size:.82rem}
@@ -294,6 +344,12 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .pay-txt .cell-sub{margin-top:2px;line-height:1.35}
 .pay-txt .cell-sub .num{white-space:nowrap}
 .tile.bank.fill img{padding:0;object-fit:cover}
+.tile.bank.upi.has-logo img{padding:9%}
+#payGroup button{display:inline-flex;align-items:center;justify-content:center;gap:10px}
+.pay-ico{display:inline-grid;place-items:center;height:26px;min-width:44px;padding:3px 6px;border-radius:7px;background:#FFFFFF;box-shadow:0 2px 8px -3px rgba(0,0,0,.4)}
+.pay-ico img{height:20px;width:56px;object-fit:contain;display:block}
+.pay-ico.card{min-width:0;width:26px;padding:4px;background:var(--panel-3);box-shadow:none;color:currentColor}
+.pay-ico.card svg{width:100%;height:100%}
 .amt{text-align:right}
 .amt .num{font-size:1.12rem;font-weight:700}
 .amt small{color:var(--text-2);font-size:.9rem;font-family:var(--mono)}
@@ -332,8 +388,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .foot{max-width:1360px;margin:0 auto;padding:0 40px 48px;display:flex;justify-content:space-between;gap:20px;color:var(--text-3);font-size:.88rem;flex-wrap:wrap}
 
 /* ───────── Modal ───────── */
-.overlay{position:fixed;inset:0;z-index:100;background:rgba(5,5,7,.6);backdrop-filter:blur(8px);display:grid;place-items:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .25s}
-.overlay.open{opacity:1;pointer-events:auto}
+.overlay{position:fixed;inset:0;z-index:100;background:rgba(5,5,7,.6);backdrop-filter:blur(8px);display:grid;place-items:center;padding:20px;opacity:0;pointer-events:none;visibility:hidden;transition:opacity .25s,visibility 0s .25s}
+.overlay.open{opacity:1;pointer-events:auto;visibility:visible;transition:opacity .25s}
 .modal{width:min(760px,100%);max-height:calc(100vh - 40px);display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line-2);border-radius:var(--r-xl);box-shadow:0 40px 100px -20px rgba(0,0,0,.8);transform:translateY(16px) scale(.98);transition:transform .35s var(--ease)}
 .overlay.open .modal{transform:none}
 .modal-head{display:flex;justify-content:space-between;align-items:center;padding:28px 32px 0}
@@ -352,9 +408,10 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .svc-opt.other .tile{--c:var(--panel-3);color:var(--text-2)}
 #fNameOthers{display:none;margin-top:8px}
 /* Inline form errors */
-.ferr{font-size:.82rem;color:var(--danger);margin-top:-1px}
+.ferr{display:inline-flex;align-items:center;gap:7px;width:fit-content;margin-top:2px;padding:4px 11px 4px 5px;border-radius:999px;font-size:.86rem;font-weight:600;color:var(--danger-text,var(--danger));background:var(--danger-soft);border:1px solid color-mix(in srgb,var(--danger) 35%,transparent)}
+.ferr::before{content:"!";display:grid;place-items:center;width:18px;height:18px;border-radius:50%;background:var(--danger);color:#fff;font-size:.72rem;font-weight:800}
 .field.invalid .input,.field.invalid .select{border-color:var(--danger);box-shadow:0 0 0 3px var(--danger-soft)}
-.field.invalid .services .svc-opt{border-color:rgba(242,85,90,.45)}
+.field.invalid .services .svc-opt{border-color:color-mix(in srgb,var(--danger) 70%,transparent)}
 .toggle-group{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;padding:3px;border-radius:var(--r);background:var(--panel);border:1px solid var(--line-2);height:46px}
 .toggle-group button{border-radius:9px;font-size:.92rem;font-weight:500;color:var(--text-2);transition:all .2s}
 .toggle-group button[aria-pressed="true"]{background:var(--panel-3);color:var(--text);box-shadow:inset 0 0 0 1px var(--line-2)}
@@ -515,9 +572,25 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
   .search kbd{display:none}
   .overlay{padding:0;place-items:end center}
   .modal{border-radius:var(--r-xl) var(--r-xl) 0 0;max-height:92vh}
+  /* Phone top bar: logo only, tighter gaps, so the account menu stays on screen */
+  .topbar-in{gap:10px}
+  .topbar .brand{font-size:0;gap:0}
+  .topbar .mark{width:38px;height:38px}
 }
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 </style>
+<!-- Colour-theme preview: ?theme=seal or ?theme=royal (remembered on this device) -->
+<script>
+(function () {
+  try {
+    var q = new URLSearchParams(location.search).get('theme');
+    if (q) localStorage.setItem('gs-theme', q);
+    var t = q || localStorage.getItem('gs-theme');
+    if (t && t !== 'midnight') document.documentElement.setAttribute('data-theme', t);
+  } catch (e) {}
+})();
+</script>
+<link rel="stylesheet" href="themes.css?v=4" />
 </head>
 <body>
 
@@ -576,16 +649,28 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
         <div class="field">
           <label for="password">Password</label>
           <div class="input-wrap">
-            <input class="input" type="password" id="password" placeholder="At least 6 characters" autocomplete="current-password" />
+            <input class="input" type="password" id="password" placeholder="Your password" autocomplete="current-password" />
             <button type="button" class="icon-btn" id="pwToggle" aria-label="Show password">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
             </button>
           </div>
+          <button type="button" class="link-btn" id="forgotBtn">Forgot password?</button>
         </div>
         <button type="submit" class="btn btn-primary btn-block" id="authSubmit">Log in</button>
       </form>
 
-      <div class="divider">or</div>
+      <!-- Shown after sign-up (and on login) until the email address is verified -->
+      <div class="verify-panel" id="verifyPanel" hidden>
+        <div class="verify-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg></div>
+        <p>We sent a verification link to <b id="verifyEmail"></b>. Open it, then come back here.</p>
+        <button type="button" class="btn btn-primary btn-block" id="verifyDone">I've verified my email</button>
+        <div class="verify-row">
+          <button type="button" class="link-btn" id="verifyResend">Resend email</button>
+          <button type="button" class="link-btn" id="verifyOther">Use a different account</button>
+        </div>
+      </div>
+
+      <div class="divider" id="authDivider">or</div>
       <button type="button" class="btn btn-secondary btn-block" id="demoBtn">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3"/></svg>
         Explore the live demo
@@ -678,8 +763,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
           <div><div class="panel-title">By category</div><div class="panel-sub">Monthly-equivalent spend</div></div>
         </div>
         <div class="donut-wrap">
-          <canvas id="categoryChart" aria-label="Doughnut chart of spend by category" role="img"></canvas>
-          <div class="donut-center"><small>per month</small><b class="num" id="donutTotal">₹0</b></div>
+          <svg id="catDonut" viewBox="0 0 250 250" role="img" aria-label="Spend by category"></svg>
+          <div class="donut-center"><small id="donutLabel">Per month</small><b class="num"><span class="cur">₹</span><span id="donutTotal">0</span></b><span id="donutSub">₹0 a year</span></div>
         </div>
         <div class="legend" id="legend"></div>
       </div>
@@ -761,8 +846,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
           <div class="field full">
             <span class="flabel">Payment method</span>
             <div class="toggle-group" id="payGroup">
-              <button type="button" data-v="UPI" aria-pressed="true">UPI</button>
-              <button type="button" data-v="Card" aria-pressed="false">Card</button>
+              <button type="button" data-v="UPI" aria-pressed="true"><span class="pay-ico"><img src="assets/upi.svg" alt=""></span>UPI</button>
+              <button type="button" data-v="Card" aria-pressed="false"><span class="pay-ico card"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M2.5 10h19M6.5 15h4"/></svg></span>Card</button>
             </div>
           </div>
           <div class="full" id="cardDetails">
@@ -844,7 +929,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 
 <div id="toasts" aria-live="polite"></div>
 
-<script src="gmail-import.js"></script>
+<script src="gmail-import.js?v=4"></script>
 <script>
 /* ════════════════════════════════════════════
    CATALOGUE
@@ -866,7 +951,7 @@ const SI = (s, c = '') => `https://cdn.simpleicons.org/${s}${c ? '/' + c : ''}`;
 const LH = s => `https://cdn.jsdelivr.net/npm/@lobehub/icons-static-svg@1.45.0/icons/${s}.svg`;
 const WM = p => `https://upload.wikimedia.org/wikipedia/commons/${p}`;
 const FAV = d => `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://${d}&size=256`;
-const BANK = code => `https://cdn.jsdelivr.net/gh/praveenpuglia/indian-banks@main/assets/logos/${code}/symbol.svg`;
+const BANK = code => `https://cdn.jsdelivr.net/gh/praveenpuglia/indian-banks@3f23351ce2262900e645d5ba6e9eee052847ce01/assets/logos/${code}/symbol.svg`;
 
 const SERVICES = [
   { name:'Netflix',            cat:'Entertainment', color:'#E50914', mark:'N',  logo:SI('netflix') },
@@ -995,9 +1080,11 @@ function relDays(d) {
   if (d < 0)  return `${-d} days ago`;
   return `in ${d} days`;
 }
-function addCycle(dateStr, cycle) {
+/* anchorDay is the day of month the user originally picked (e.g. 31), so a
+   renewal that had to fall on 28 Feb goes back to 31 Mar instead of drifting to 28 */
+function addCycle(dateStr, cycle, anchorDay) {
   const d = parseDate(dateStr);
-  const day = d.getDate();
+  const day = anchorDay || d.getDate();
   d.setDate(1);
   if (cycle === 'Yearly') d.setFullYear(d.getFullYear() + 1); else d.setMonth(d.getMonth() + 1);
   const last = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
@@ -1016,7 +1103,8 @@ function processExpiredSubscriptions() {
     let moved = false;
     while (parseDate(sub.date) < t) {
       if (!sub.autopay) { removed.push(sub); return false; }
-      sub.date = addCycle(sub.date, sub.cycle);
+      if (!sub.anchorDay) sub.anchorDay = parseDate(sub.date).getDate();
+      sub.date = addCycle(sub.date, sub.cycle, sub.anchorDay);
       moved = true;
     }
     if (moved) advanced.push(sub);
@@ -1128,7 +1216,7 @@ function renderCards() {
     const dueCls = d === 0 ? 'today' : (d >= 0 && d <= 3 ? 'urgent' : '');
     const pay = s.payment === 'Card'
       ? `${bankTile(s.bank, 'pay-tile')}<div class="pay-txt"><span class="pay-name">${esc((bankInfo(s.bank) || {}).name || s.bank || 'Card')}</span><span class="cell-sub">${s.last4 ? `<span class="num">•••• ${esc(s.last4)}</span> · ` : ''}${s.autopay ? 'Auto-pay' : 'Manual'}</span></div>`
-      : `<div class="tile pay-tile" style="--c:#2A2A31">₹</div><div class="pay-txt"><span class="pay-name">UPI</span><span class="cell-sub">${s.autopay ? 'Auto-pay on' : 'Pay manually'}</span></div>`;
+      : `${logoTile({ logo:'assets/upi.svg', color:'#2A2A31' }, '₹', 'pay-tile bank upi')}<div class="pay-txt"><span class="pay-name">UPI</span><span class="cell-sub">${s.autopay ? 'Auto-pay on' : 'Pay manually'}</span></div>`;
     return `
       <div class="row" style="--d:${Math.min(i, 12) * 35}ms">
         <div class="svc">
@@ -1199,23 +1287,25 @@ function forecastData() {
       const d = parseDate(ds);
       const idx = (d.getFullYear() - start.getFullYear()) * 12 + d.getMonth() - start.getMonth();
       if (idx >= 0 && idx < 12) totals[idx] += Number(s.cost);
-      ds = addCycle(ds, s.cycle);
+      ds = addCycle(ds, s.cycle, s.anchorDay);
     }
   });
   return { labels: months.map(m => m.toLocaleDateString('en-IN', { month:'short' }) + (m.getMonth() === 0 ? ` '${String(m.getFullYear()).slice(2)}` : '')), totals };
 }
 
-const tooltipBase = {
-  backgroundColor:'#1E1E23', borderColor:'rgba(255,255,255,.12)', borderWidth:1,
-  titleColor:'#C2C2CC', bodyColor:'#F5F5F7', padding:12, cornerRadius:10, displayColors:false,
+/* Chart colours come from CSS variables so they follow the active theme */
+const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const tooltipBase = () => ({
+  backgroundColor:cssVar('--tip-bg'), borderColor:cssVar('--tip-border'), borderWidth:1,
+  titleColor:cssVar('--tip-title'), bodyColor:cssVar('--tip-body'), padding:12, cornerRadius:10, displayColors:false,
   titleFont:{ family:'Manrope', size:13, weight:'600' }, bodyFont:{ family:'Manrope', size:15, weight:'700' },
-};
+});
 
 function renderCharts() {
   if (typeof Chart === 'undefined') return;
   Chart.defaults.font.family = 'Manrope, system-ui, sans-serif';
   Chart.defaults.font.size = 14;
-  Chart.defaults.color = '#9A9AA6';
+  Chart.defaults.color = cssVar('--chart-text');
 
   /* Forecast */
   const f = forecastData();
@@ -1223,7 +1313,7 @@ function renderCharts() {
   const max = Math.max(...f.totals);
   $('forecastTotal').textContent = `${rupees(sum)} · 12 mo`;
   $('forecastEmpty').classList.toggle('show', sum === 0);
-  const colors = f.totals.map((v, i) => i === 0 ? '#8B7CFF' : (v === max && v > 0 ? 'rgba(139,124,255,.45)' : 'rgba(255,255,255,.12)'));
+  const colors = f.totals.map((v, i) => i === 0 ? cssVar('--chart-hi') : (v === max && v > 0 ? cssVar('--chart-hi-soft') : cssVar('--chart-bar')));
   if (forecastChart) {
     forecastChart.data.labels = f.labels;
     forecastChart.data.datasets[0].data = f.totals;
@@ -1232,13 +1322,13 @@ function renderCharts() {
   } else {
     forecastChart = new Chart($('forecastChart'), {
       type:'bar',
-      data:{ labels:f.labels, datasets:[{ data:f.totals, backgroundColor:colors, hoverBackgroundColor:'#8B7CFF', borderRadius:6, borderSkipped:false, maxBarThickness:38 }] },
+      data:{ labels:f.labels, datasets:[{ data:f.totals, backgroundColor:colors, hoverBackgroundColor:cssVar('--chart-hi'), borderRadius:6, borderSkipped:false, maxBarThickness:38 }] },
       options:{
         responsive:true, maintainAspectRatio:false, animation:{ duration:800, easing:'easeOutQuart' },
-        plugins:{ legend:{ display:false }, tooltip:{ ...tooltipBase, callbacks:{ label: c => rupees(c.raw) } } },
+        plugins:{ legend:{ display:false }, tooltip:{ ...tooltipBase(), callbacks:{ label: c => rupees(c.raw) } } },
         scales:{
           x:{ grid:{ display:false }, border:{ display:false }, ticks:{ font:{ size:14, weight:'500' } } },
-          y:{ grid:{ color:'rgba(255,255,255,.05)' }, border:{ display:false }, ticks:{ font:{ size:13 }, maxTicksLimit:5, callback: v => v >= 1000 ? '₹' + (v / 1000) + 'k' : '₹' + v } },
+          y:{ grid:{ color:cssVar('--chart-grid') }, border:{ display:false }, ticks:{ font:{ size:13 }, maxTicksLimit:5, callback: v => v >= 1000 ? '₹' + (v / 1000) + 'k' : '₹' + v } },
         },
       },
     });
@@ -1249,48 +1339,116 @@ function renderCharts() {
   subscriptions.forEach(s => totals[s.category] = (totals[s.category] || 0) + monthlyAmount(s));
   const cats = CATEGORIES.filter(c => totals[c.key]).sort((a, b) => totals[b.key] - totals[a.key]);
   const all = cats.reduce((a, c) => a + totals[c.key], 0);
-  $('donutTotal').textContent = rupees(all);
-  const data = cats.length ? cats.map(c => totals[c.key]) : [1];
-  const bg = cats.length ? cats.map(c => c.color) : ['rgba(255,255,255,.08)'];
-  const labels = cats.length ? cats.map(c => c.key) : ['None'];
-  if (categoryChart) {
-    Object.assign(categoryChart.data, { labels });
-    Object.assign(categoryChart.data.datasets[0], { data, backgroundColor: bg });
-    categoryChart.options.plugins.tooltip.enabled = cats.length > 0;
-    categoryChart.update();
-  } else {
-    categoryChart = new Chart($('categoryChart'), {
-      type:'doughnut',
-      data:{ labels, datasets:[{ data, backgroundColor:bg, borderColor:'#111114', borderWidth:3, hoverOffset:6, borderRadius:4 }] },
-      options:{
-        responsive:true, maintainAspectRatio:false, cutout:'74%', animation:{ animateRotate:true, duration:900 },
-        plugins:{ legend:{ display:false }, tooltip:{ ...tooltipBase, enabled:cats.length > 0, callbacks:{ title: c => c[0].label, label: c => rupees(c.raw) + '/mo' } } },
-      },
-    });
-  }
-  $('legend').innerHTML = cats.length ? cats.map(c => {
-    const pct = Math.round(totals[c.key] / all * 100);
-    return `<div class="lg-row"><span class="lg-dot" style="background:${c.color}"></span><span class="lg-name">${c.key}</span><span class="lg-val">${rupees(totals[c.key])}<span>${pct}%</span></span>
-      <div class="lg-bar"><i style="width:${pct}%;background:${c.color}"></i></div></div>`;
-  }).join('') : `<div class="up-empty" style="padding:8px">Categories appear once you add subscriptions.</div>`;
+  const counts = {};
+  subscriptions.forEach(s => counts[s.category] = (counts[s.category] || 0) + 1);
+  catState = { cats: cats.map(c => ({ ...c, v: totals[c.key], n: counts[c.key] || 0, pct: totals[c.key] / all * 100 })), all };
+  drawDonut();
+  catFocus(-1);
+
+  $('legend').innerHTML = cats.length ? catState.cats.map((c, i) => `
+    <div class="lg-row" data-ci="${i}" style="--c:${c.color}">
+      <span class="lg-chip"><i></i></span>
+      <div class="lg-txt"><span class="lg-name">${c.key}</span><span class="lg-sub">${c.n} subscription${c.n === 1 ? '' : 's'}</span></div>
+      <div class="lg-amt"><b class="num">${rupees(c.v)}</b><span class="lg-pct num">${c.pct < 1 ? '<1' : Math.round(c.pct)}%</span></div>
+      <div class="lg-bar"><i style="width:${Math.max(c.pct, 2)}%;--d:${150 + i * 90}ms"></i></div>
+    </div>`).join('') : `<div class="up-empty" style="padding:8px 10px">Categories appear once you add subscriptions.</div>`;
 }
+
+/* Hand-drawn SVG donut: rounded, separated segments with a gradient sheen and glow */
+let catState = { cats: [], all: 0 }, catSig = '';
+function drawDonut() {
+  const svg = $('catDonut'), { cats } = catState;
+  const R = 100, C = 2 * Math.PI * R, GAP = 0;
+  const tint = (hex, a) => '#' + [1, 3, 5].map(k => {
+    const v = parseInt(hex.slice(k, k + 2), 16);
+    return Math.round(v * a / 100 + 255 * (1 - a / 100)).toString(16).padStart(2, '0');
+  }).join('');
+  let ticks = '';
+  for (let k = 0; k < 72; k++) {
+    const a = k / 72 * 2 * Math.PI, r1 = 116, r2 = k % 6 ? 119 : 122;
+    ticks += `<line class="tick" x1="${125 + r1 * Math.cos(a)}" y1="${125 + r1 * Math.sin(a)}" x2="${125 + r2 * Math.cos(a)}" y2="${125 + r2 * Math.sin(a)}"/>`;
+  }
+  let pos = 0, defs = '', segs = '';
+  cats.forEach((c, i) => {
+    // +0.6 overlaps each segment a hair into the next so no seam shows
+    const arc = c.v / catState.all * C, len = Math.max(arc - GAP + (cats.length > 1 ? .6 : 0), .01);
+    defs += `<linearGradient id="cg${i}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${tint(c.color, 70)}"/><stop offset="1" stop-color="${c.color}"/></linearGradient>`;
+    segs += `<circle class="seg" data-ci="${i}" cx="125" cy="125" r="${R}" stroke="url(#cg${i})" style="--glow:color-mix(in srgb, ${c.color} 55%, transparent)"
+      stroke-dasharray="${len} ${C}" data-len="${len}" stroke-dashoffset="${-(pos + GAP / 2)}"><title>${c.key}: ${rupees(c.v)}/mo</title></circle>`;
+    pos += arc;
+  });
+  if (!cats.length) segs = `<circle class="seg" cx="125" cy="125" r="${R}" stroke="var(--chart-empty)" style="--glow:transparent;cursor:default"/>`;
+  svg.innerHTML = `<defs>${defs}</defs>${ticks}<circle class="trk" cx="125" cy="125" r="${R}"/>${segs}`;
+
+  // Draw-in animation only when the data actually changes
+  const sig = cats.map(c => c.key + c.v).join('|');
+  if (sig !== catSig && window.gsap && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    svg.querySelectorAll('.seg[data-len]').forEach((s, i) =>
+      gsap.fromTo(s, { attr: { 'stroke-dasharray': `0 ${C}` } }, { attr: { 'stroke-dasharray': `${s.dataset.len} ${C}` }, duration: 1.1, delay: .1 + i * .12, ease: 'power3.out' }));
+    gsap.fromTo(svg.querySelectorAll('.tick'), { opacity: 0 }, { opacity: 1, duration: .02, stagger: .008, ease: 'none' });
+  }
+  catSig = sig;
+}
+
+function catFocus(i) {
+  const c = catState.cats[i];
+  $('catDonut').classList.toggle('focus', !!c);
+  $('legend').classList.toggle('focus', !!c);
+  document.querySelectorAll('#catDonut .seg, #legend .lg-row').forEach(el => el.classList.toggle('on', !!c && +el.dataset.ci === i));
+  const num = $('donutTotal');
+  if (c) {
+    $('donutLabel').textContent = c.key; $('donutLabel').style.color = c.color;
+    num.textContent = Math.round(c.v).toLocaleString('en-IN'); num.dataset.v = Math.round(c.v);
+    $('donutSub').textContent = `${Math.round(c.pct)}% of your spend`;
+  } else {
+    $('donutLabel').textContent = 'Per month'; $('donutLabel').style.color = '';
+    countUp(num, Math.round(catState.all), v => Math.round(v).toLocaleString('en-IN'));
+    $('donutSub').textContent = catState.all ? `${rupees(catState.all * 12)} a year` : 'Nothing tracked yet';
+  }
+}
+['catDonut', 'legend'].forEach(id => {
+  $(id).addEventListener('pointerover', e => { const t = e.target.closest('[data-ci]'); if (t) catFocus(+t.dataset.ci); });
+  $(id).addEventListener('pointerleave', () => catFocus(-1));
+});
 
 /* ════════════════════════════════════════════
    OVERLAYS
 ════════════════════════════════════════════ */
 let lastFocus = null;
+/* Focus moves into an open dialog, Tab stays inside it, and the page behind is inert */
+const FOCUSABLE = 'button:not([disabled]),[href],input:not([disabled]):not([type="hidden"]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+const visibleFocusables = root => [...root.querySelectorAll(FOCUSABLE)].filter(el => el.offsetParent !== null || el === document.activeElement);
 function openOverlay(id) {
   lastFocus = document.activeElement;
   $(id).classList.add('open');
   document.body.style.overflow = 'hidden';
+  $('appPage').inert = true;
+  requestAnimationFrame(() => {
+    const modal = $(id).querySelector('.modal') || $(id);
+    if (modal.contains(document.activeElement)) return;
+    const body = modal.querySelector('.modal-body');
+    const first = (body && visibleFocusables(body)[0]) || visibleFocusables(modal)[0];
+    if (first) first.focus({ preventScroll: true });
+  });
 }
 function closeOverlay(id) {
   if (!$(id).classList.contains('open')) return;
-  if (id === 'importOverlay') importAbort = true;
+  if (id === 'importOverlay') cancelImport();
   $(id).classList.remove('open');
-  if (!document.querySelector('.overlay.open')) document.body.style.overflow = '';
+  if (!document.querySelector('.overlay.open')) { document.body.style.overflow = ''; $('appPage').inert = false; }
   if (lastFocus && lastFocus.focus) lastFocus.focus();
 }
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Tab') return;
+  const ov = [...document.querySelectorAll('.overlay.open')].pop();
+  if (!ov) return;
+  const els = visibleFocusables(ov);
+  if (!els.length) return;
+  const first = els[0], last = els[els.length - 1];
+  if (!ov.contains(document.activeElement)) { e.preventDefault(); first.focus(); }
+  else if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+});
 document.querySelectorAll('.overlay').forEach(o => o.addEventListener('mousedown', e => {
   if (e.target === o) { if (o.id === 'confirmOverlay') deletingId = null; closeOverlay(o.id); }
 }));
@@ -1490,7 +1648,8 @@ $('fCost').addEventListener('input', function () { this.value = this.value.repla
 
 function initDatePicker() {
   if (typeof flatpickr === 'undefined') { $('fDate').type = 'date'; return; }
-  fp = flatpickr('#fDate', { dateFormat:'Y-m-d', altInput:true, altFormat:'d M Y', altInputClass:'input', disableMobile:true });
+  fp = flatpickr('#fDate', { dateFormat:'Y-m-d', altInput:true, altFormat:'d M Y', altInputClass:'input', disableMobile:true, minDate:'today' });
+  fp.altInput.setAttribute('aria-label', 'Next billing date');
 }
 function setDate(str) { if (fp) fp.setDate(str, false); else $('fDate').value = str; }
 
@@ -1566,6 +1725,7 @@ $('subForm').addEventListener('submit', e => {
   if (!name) errs.push($('fName').value === 'Others' ? [$('fNameOthers'), 'Enter a name'] : [$('serviceGrid'), 'Pick a service']);
   if (isNaN(cost) || cost <= 0) errs.push([$('fCost'), $('fCost').value.trim() ? 'Enter a cost greater than zero' : 'Enter a cost']);
   if (!date) errs.push([$('fDate'), 'Choose the next billing date']);
+  else if (daysUntil(date) < 0) errs.push([$('fDate'), 'Pick today or a later date']);
   if (payment === 'Card' && last4 && last4.length !== 4) errs.push([$('fCardLast4'), 'Enter exactly 4 digits']);
   if (errs.length) {
     errs.forEach(([el, msg]) => fieldError(el, msg));
@@ -1577,6 +1737,7 @@ $('subForm').addEventListener('submit', e => {
 
   const data = {
     name, cost, date,
+    anchorDay: parseDate(date).getDate(),
     cycle: getPressed('cycleGroup'),
     category: $('fCategory').value,
     autopay: $('fAutopay').checked,
@@ -1607,7 +1768,14 @@ $('cancelFormBtn').addEventListener('click', () => closeOverlay('formOverlay'));
 /* ════════════════════════════════════════════
    IMPORT FROM GMAIL  (parser + Gmail calls live in gmail-import.js)
 ════════════════════════════════════════════ */
-let importFound = [], importAbort = false, importScanned = 0;
+/* Every scan gets its own run number and AbortController. Closing or reopening the
+   dialog bumps the number, so a scan still in flight can never draw into a newer
+   dialog, and its Gmail requests are cancelled. */
+let importFound = [], importScanned = 0, importRun = 0, importAC = null;
+function cancelImport() {
+  importRun++;
+  if (importAC) { importAC.abort(); importAC = null; }
+}
 const GOOGLE_G = '<svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>';
 const ICON = {
   lock:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
@@ -1618,7 +1786,7 @@ const importAvailable = () => typeof GmailImport !== 'undefined' && (isDemo || G
 function setImport(body, foot) { $('importBody').innerHTML = body; $('importFoot').innerHTML = foot; }
 
 function openImport() {
-  importAbort = false;
+  cancelImport();
   const names = GmailImport.RULES.map(r => r.name);
   setImport(`
     <div class="imp-hero">
@@ -1663,7 +1831,9 @@ function showImportProgress(done, total) {
 }
 
 async function startImport() {
-  importAbort = false;
+  cancelImport();
+  const run = importRun, ac = importAC = new AbortController();
+  const stale = () => run !== importRun;
   const today = GmailImport.todayISO();
   let receipts;
   try {
@@ -1672,26 +1842,27 @@ async function startImport() {
       showImportProgress(0, inbox.length);
       for (let i = 1; i <= inbox.length; i++) {
         await new Promise(r => setTimeout(r, 160));
-        if (importAbort) return;
+        if (stale()) return;
         showImportProgress(i, inbox.length);
       }
       receipts = inbox.map(GmailImport.parseReceipt).filter(Boolean);
     } else {
       const token = await GmailImport.getToken(currentUser && currentUser.email);
-      if (importAbort) { GmailImport.revoke(token); return; }
+      if (stale()) { GmailImport.revoke(token); return; }
       showImportProgress(0, 0);
-      try { receipts = await GmailImport.scanGmail(token, (d, t) => { if (!importAbort) showImportProgress(d, t); }); }
+      try { receipts = await GmailImport.scanGmail(token, (d, t) => { if (!stale()) showImportProgress(d, t); }, ac.signal); }
       finally { GmailImport.revoke(token); }
     }
   } catch (err) {
-    if (importAbort) return;
+    if (stale()) return;
     setImport(`<div class="imp-empty"><h3>Couldn't scan your inbox</h3><p>${esc(err.message || 'Something went wrong.')}</p></div>`,
       `<button class="btn btn-ghost" data-close="importOverlay">Close</button><button class="btn btn-primary" id="impRetry">Try again</button>`);
     wireImportClose();
     $('impRetry').addEventListener('click', startImport);
     return;
   }
-  if (importAbort) return;
+  if (stale()) return;
+  if (importAC === ac) importAC = null;
   importFound = GmailImport.groupFindings(receipts, today, subscriptions.map(s => s.name))
     .map(f => ({ ...f, pick: f.status === 'new' }));
   showImportResults(receipts.length);
@@ -1975,10 +2146,12 @@ if (new URLSearchParams(location.search).has('demo')) enterDemo();
 /* If Firebase can't load (offline / blocked), don't leave the splash up */
 setTimeout(() => { if (!$('splash').classList.contains('gone')) showLogin(); }, 5000);
 </script>
+<script src="motion.js?v=4"></script>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut }
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut,
+         sendEmailVerification, sendPasswordResetEmail, reload }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore, collection, getDocs, getDoc, deleteDoc, doc, setDoc }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -1997,10 +2170,12 @@ const db   = getFirestore(app);
 const auth = getAuth(app);
 const $ = id => document.getElementById(id);
 
-async function loadSubscriptions(email) {
+async function loadSubscriptions(email, gen) {
   loading = true; render();
   try {
     const snap = await getDocs(collection(db, "users", email, "subscriptions"));
+    // Signed out or switched account while this was in flight: drop the stale result
+    if (gen !== undefined && gen !== authGen) return;
     subscriptions = [];
     snap.forEach(d => subscriptions.push({ id: d.id, ...d.data(), cost: Number(d.data().cost) }));
     loading = false;
@@ -2040,19 +2215,88 @@ window._saveReminderPref = async on => {
   } catch (err) { console.error("saveReminderPref error:", err); return false; }
 };
 
+/* Unverified accounts stay on the verify screen: data and reminder emails are
+   keyed by email address, so we only trust addresses the user has proven they own */
+function showVerify(user) {
+  currentUser = null;
+  subscriptions = [];
+  $('verifyEmail').textContent = user.email || '';
+  $('verifyPanel').hidden = false;
+  $('loginPage').classList.add('verifying');
+  $('authTitle').textContent = 'Verify your email';
+  $('authLead').textContent = 'One quick step before you start.';
+  showLogin();
+}
+function hideVerify() {
+  $('verifyPanel').hidden = true;
+  $('loginPage').classList.remove('verifying');
+  window.setAuthMode(authMode);
+}
+
+let authGen = 0;
 onAuthStateChanged(auth, user => {
+  const gen = ++authGen;
+  if (user && !user.emailVerified) {
+    isDemo = false;
+    showVerify(user);
+    return;
+  }
   if (user) {
     isDemo = false;
+    hideVerify();
     currentUser = user;
     showApp(user.email);
     loadReminderPref(user.email);
-    loadSubscriptions(user.email);
+    loadSubscriptions(user.email, gen);
   } else {
     currentUser = null;
+    hideVerify();
     if (isDemo) return;
     subscriptions = [];
     showLogin();
   }
+});
+window._authGen = () => authGen;
+
+$('verifyDone').addEventListener('click', async () => {
+  const u = auth.currentUser;
+  if (!u) return hideVerify();
+  const b = $('verifyDone');
+  b.disabled = true;
+  try {
+    await reload(u);
+    if (auth.currentUser.emailVerified) {
+      await auth.currentUser.getIdToken(true);   // refresh the token so Firestore rules see email_verified
+      hideVerify();
+      currentUser = auth.currentUser;
+      showApp(currentUser.email);
+      loadReminderPref(currentUser.email);
+      loadSubscriptions(currentUser.email, ++authGen);
+    } else {
+      toast("Not verified yet. Open the link in the email we sent, then try again.", true);
+    }
+  } catch (err) { toast(friendlyError(err.code), true); }
+  finally { b.disabled = false; }
+});
+$('verifyResend').addEventListener('click', async () => {
+  if (!auth.currentUser) return;
+  try { await sendEmailVerification(auth.currentUser); toast('Verification email sent.'); }
+  catch (err) { toast(friendlyError(err.code), true); }
+});
+$('verifyOther').addEventListener('click', () => signOut(auth));
+
+$('forgotBtn').addEventListener('click', async () => {
+  hideError();
+  const email = $('email').value.trim();
+  if (!email) { $('email').focus(); return showError('Enter your email address first, then tap “Forgot password?”.'); }
+  try {
+    await sendPasswordResetEmail(auth, email);
+  } catch (err) {
+    // Don't reveal whether an account exists; only surface input / network problems
+    if (['auth/invalid-email', 'auth/missing-email', 'auth/network-request-failed', 'auth/too-many-requests'].includes(err.code))
+      return showError(friendlyError(err.code));
+  }
+  showNote(`If an account exists for ${email}, a password reset link is on its way.`);
 });
 
 /* ─── Auth form ─── */
@@ -2070,13 +2314,16 @@ window.setAuthMode = mode => {
   $('authLead').textContent  = COPY[mode].lead;
   $('authSubmit').textContent = COPY[mode].cta;
   $('password').autocomplete = mode === 'signup' ? 'new-password' : 'current-password';
+  $('password').placeholder = mode === 'signup' ? 'At least 6 characters' : 'Your password';
+  $('loginPage').classList.toggle('mode-signup', mode === 'signup');
   hideError();
 };
 $('tabLogin').addEventListener('click',  () => window.setAuthMode('login'));
 $('tabSignup').addEventListener('click', () => window.setAuthMode('signup'));
 
-function showError(msg) { $('authErrorText').textContent = msg; $('authError').classList.add('show'); }
-function hideError()    { $('authError').classList.remove('show'); }
+function showError(msg) { $('authErrorText').textContent = msg; $('authError').classList.remove('ok'); $('authError').classList.add('show'); }
+function showNote(msg)  { $('authErrorText').textContent = msg; $('authError').classList.add('show', 'ok'); }
+function hideError()    { $('authError').classList.remove('show', 'ok'); }
 
 function friendlyError(code) {
   return ({
@@ -2090,6 +2337,9 @@ function friendlyError(code) {
     'auth/wrong-password':         'Email or password is incorrect.',
     'auth/too-many-requests':      'Too many attempts. Wait a moment and try again.',
     'auth/network-request-failed': 'Network error. Check your internet connection.',
+    'auth/user-disabled':          'This account has been disabled.',
+    'auth/operation-not-allowed':  'Email sign-in isn’t enabled for this app yet.',
+    'auth/missing-continue-uri':   'Something went wrong sending the email. Please try again.',
   })[code] || 'Something went wrong. Please try again.';
 }
 
@@ -2104,8 +2354,12 @@ $('authForm').addEventListener('submit', async e => {
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span>';
   try {
-    if (authMode === 'signup') await createUserWithEmailAndPassword(auth, email, password);
-    else                       await signInWithEmailAndPassword(auth, email, password);
+    if (authMode === 'signup') {
+      const cred = await createUserWithEmailAndPassword(auth, email, password);
+      try { await sendEmailVerification(cred.user); } catch (err) { console.error('sendEmailVerification:', err); }
+    } else {
+      await signInWithEmailAndPassword(auth, email, password);
+    }
     $('password').value = '';
   } catch (err) {
     showError(friendlyError(err.code));
@@ -2119,6 +2373,25 @@ window.logout = () => {
   if (isDemo) { exitDemo(); return; }
   signOut(auth);
 };
+</script>
+<!-- Theme preview switcher -->
+<div class="theme-switch" role="group" aria-label="Colour theme">
+  <button type="button" data-t="midnight"><i style="background:linear-gradient(135deg,#17171B,#8B7CFF)"></i>Midnight</button>
+  <button type="button" data-t="seal"><i style="background:linear-gradient(135deg,#DBF2FC,#072D59 60%,#FD6E88)"></i>Seal</button>
+  <button type="button" data-t="royal"><i style="background:linear-gradient(135deg,#234C9F 55%,#EDB158)"></i>Royal</button>
+</div>
+<script>
+(function () {
+  var cur = document.documentElement.getAttribute('data-theme') || 'midnight';
+  document.querySelectorAll('.theme-switch button').forEach(function (b) {
+    b.setAttribute('aria-pressed', String(b.dataset.t === cur));
+    b.addEventListener('click', function () {
+      var u = new URL(location.href);
+      u.searchParams.set('theme', b.dataset.t);
+      location.href = u.toString();
+    });
+  });
+})();
 </script>
 </body>
 </html>
