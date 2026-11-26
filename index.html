@@ -590,7 +590,7 @@ html.gsap .btn,html.gsap .svc-opt,html.gsap .icon-btn{transition-property:backgr
   } catch (e) {}
 })();
 </script>
-<link rel="stylesheet" href="themes.css?v=4" />
+<link rel="stylesheet" href="themes.css?v=5" />
 </head>
 <body>
 
@@ -929,7 +929,7 @@ html.gsap .btn,html.gsap .svc-opt,html.gsap .icon-btn{transition-property:backgr
 
 <div id="toasts" aria-live="polite"></div>
 
-<script src="gmail-import.js?v=4"></script>
+<script src="gmail-import.js?v=5"></script>
 <script>
 /* ════════════════════════════════════════════
    CATALOGUE
@@ -1020,9 +1020,19 @@ function serviceInfo(name) {
 }
 /* Logo on the dark tile; the coloured letter tile shows only if there's no logo or it fails to load */
 function logoFail(img) { img.parentNode.classList.remove('has-logo', 'fill', 'glyph', 'brand'); img.remove(); }
+// One capture-phase listener instead of inline onerror="" on every logo (keeps the CSP strict-ready)
+document.addEventListener('error', e => { const t = e.target; if (t && t.tagName === 'IMG' && t.parentNode && t.parentNode.classList && t.parentNode.classList.contains('tile')) logoFail(t); }, true);
+/* Row and empty-state buttons use data-act + data-id instead of inline onclick="", so an ID
+   is only ever read as data and can't break out into script */
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('[data-act]');
+  if (!b) return;
+  const id = b.dataset.id;
+  ({ import: () => openImport(), add: () => openAdd(), edit: () => openEdit(id), delete: () => askDelete(id) })[b.dataset.act]?.();
+});
 function logoTile(item, text, cls) {
   const kind = item.logo ? (item.fill ? 'fill' : item.bg ? 'glyph brand' : 'glyph') : '';
-  const img = item.logo ? `<img src="${item.logo}" alt="" loading="lazy" referrerpolicy="no-referrer"${item.invert ? ' class="inv"' : ''} onerror="logoFail(this)">` : '';
+  const img = item.logo ? `<img src="${item.logo}" alt="" loading="lazy" referrerpolicy="no-referrer"${item.invert ? ' class="inv"' : ''}>` : '';
   return `<div class="tile ${cls} ${item.logo ? 'has-logo ' + kind : ''}" style="--c:${item.color}${item.bg ? ';--bg:' + item.bg : ''}" aria-hidden="true">${esc(text)}${img}</div>`;
 }
 function tile(name, cls = '') {
@@ -1205,8 +1215,8 @@ function renderCards() {
         <h3>${none ? 'Nothing tracked yet' : 'No matches'}</h3>
         <p>${none ? 'Add your first subscription and GetSorted will forecast your spend and remind you before it renews.' : 'Try a different search or category.'}</p>
         ${none ? `<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-          ${importAvailable() ? `<button class="btn btn-secondary" onclick="openImport()">Import from Gmail</button>` : ''}
-          <button class="btn btn-primary" onclick="openAdd()">Add your first subscription</button></div>` : ''}
+          ${importAvailable() ? `<button class="btn btn-secondary" data-act="import">Import from Gmail</button>` : ''}
+          <button class="btn btn-primary" data-act="add">Add your first subscription</button></div>` : ''}
       </div>`;
     return;
   }
@@ -1238,8 +1248,8 @@ function renderCards() {
           <div class="cell-sub num">${s.cycle === 'Yearly' ? rupees(s.cost / 12) + '/mo' : rupees(s.cost * 12) + '/yr'}</div>
         </div>
         <div class="actions">
-          <button class="icon-btn" onclick="openEdit('${esc(s.id)}')" aria-label="Edit ${esc(s.name)}">${ICON_EDIT}</button>
-          <button class="icon-btn danger" onclick="askDelete('${esc(s.id)}')" aria-label="Delete ${esc(s.name)}">${ICON_TRASH}</button>
+          <button class="icon-btn" data-act="edit" data-id="${esc(s.id)}" aria-label="Edit ${esc(s.name)}">${ICON_EDIT}</button>
+          <button class="icon-btn danger" data-act="delete" data-id="${esc(s.id)}" aria-label="Delete ${esc(s.name)}">${ICON_TRASH}</button>
         </div>
       </div>`;
   }).join('');
@@ -1275,21 +1285,26 @@ function renderUpcoming() {
 }
 
 /* ─── Charts ─── */
+/* The next 12 months from today (not from the 1st), so the total matches the
+   "Yearly cost" KPI. Bars are calendar months; when today isn't the 1st, the
+   window ends partway into a 13th month, which gets its own bar if anything renews there. */
 function forecastData() {
-  const start = today0(); start.setDate(1);
-  const months = [...Array(12)].map((_, i) => new Date(start.getFullYear(), start.getMonth() + i, 1));
-  const end = new Date(start.getFullYear(), start.getMonth() + 12, 1);
-  const totals = new Array(12).fill(0);
+  const today = today0();
+  const start = new Date(today.getFullYear(), today.getMonth(), 1);
+  const end = new Date(today.getFullYear() + 1, today.getMonth(), today.getDate());
+  const totals = new Array(13).fill(0);
   subscriptions.forEach(s => {
     if (!s.date) return;
     let ds = s.date, guard = 0;
     while (parseDate(ds) < end && guard++ < 40) {
       const d = parseDate(ds);
       const idx = (d.getFullYear() - start.getFullYear()) * 12 + d.getMonth() - start.getMonth();
-      if (idx >= 0 && idx < 12) totals[idx] += Number(s.cost);
+      if (d >= today && idx >= 0 && idx < 13) totals[idx] += Number(s.cost);
       ds = addCycle(ds, s.cycle, s.anchorDay);
     }
   });
+  if (!totals[12]) totals.pop();
+  const months = totals.map((_, i) => new Date(start.getFullYear(), start.getMonth() + i, 1));
   return { labels: months.map(m => m.toLocaleDateString('en-IN', { month:'short' }) + (m.getMonth() === 0 ? ` '${String(m.getFullYear()).slice(2)}` : '')), totals };
 }
 
@@ -1666,6 +1681,8 @@ function resetForm() {
 }
 
 function openAdd() {
+  // Adding before the first load finishes would be wiped when the load lands
+  if (loading) { toast('Still loading your subscriptions. Try again in a moment.'); return; }
   editingId = null;
   resetForm();
   $('formTitle').textContent = 'Add subscription';
@@ -1723,7 +1740,8 @@ $('subForm').addEventListener('submit', e => {
   clearFieldErrors();
   const errs = [];
   if (!name) errs.push($('fName').value === 'Others' ? [$('fNameOthers'), 'Enter a name'] : [$('serviceGrid'), 'Pick a service']);
-  if (isNaN(cost) || cost <= 0) errs.push([$('fCost'), $('fCost').value.trim() ? 'Enter a cost greater than zero' : 'Enter a cost']);
+  // ₹0 is allowed for free or partner-billed plans (e.g. bundled with a phone plan)
+  if (isNaN(cost) || cost < 0) errs.push([$('fCost'), $('fCost').value.trim() ? 'Enter a cost of ₹0 or more' : 'Enter a cost']);
   if (!date) errs.push([$('fDate'), 'Choose the next billing date']);
   else if (daysUntil(date) < 0) errs.push([$('fDate'), 'Pick today or a later date']);
   if (payment === 'Card' && last4 && last4.length !== 4) errs.push([$('fCardLast4'), 'Enter exactly 4 digits']);
@@ -1786,6 +1804,7 @@ const importAvailable = () => typeof GmailImport !== 'undefined' && (isDemo || G
 function setImport(body, foot) { $('importBody').innerHTML = body; $('importFoot').innerHTML = foot; }
 
 function openImport() {
+  if (loading) { toast('Still loading your subscriptions. Try again in a moment.'); return; }
   cancelImport();
   const names = GmailImport.RULES.map(r => r.name);
   setImport(`
@@ -1950,8 +1969,9 @@ function showImportResults(receiptCount) {
     const f = importFound[row.dataset.i];
     if (e.target.classList.contains('imp-cost')) {
       e.target.value = e.target.value.replace(/[^\d.]/g, '');
-      f.cost = parseFloat(e.target.value) || null;
-      if (e.target.classList.contains('bad') && f.cost) {
+      const v = parseFloat(e.target.value);
+      f.cost = isNaN(v) ? null : v;
+      if (e.target.classList.contains('bad') && f.cost != null) {
         e.target.classList.remove('bad'); row.querySelector('.imp-err').textContent = '';
         if (!list.querySelector('.imp-cost.bad')) { $('impNote').textContent = ''; $('impNote').classList.remove('err'); }
       }
@@ -1972,8 +1992,8 @@ function updateImportCount() {
 function confirmImport() {
   const chosen = importFound.filter(f => f.pick && f.status !== 'tracked');
   if (!chosen.length) return;
-  // Free / partner-billed items may be ₹0; everything else needs a real price
-  const missing = chosen.filter(f => f.cost == null || f.cost < 0 || (f.cost === 0 && !f.free));
+  // Every item needs a price; ₹0 is fine (free or partner-billed plans)
+  const missing = chosen.filter(f => f.cost == null || f.cost < 0);
   if (missing.length) {
     // Point at the exact box, right where the user is looking
     let first = null;
@@ -2146,7 +2166,7 @@ if (new URLSearchParams(location.search).has('demo')) enterDemo();
 /* If Firebase can't load (offline / blocked), don't leave the splash up */
 setTimeout(() => { if (!$('splash').classList.contains('gone')) showLogin(); }, 5000);
 </script>
-<script src="motion.js?v=4"></script>
+<script src="motion.js?v=5"></script>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -2190,7 +2210,10 @@ async function loadSubscriptions(email, gen) {
 
 window._saveSubscription = async sub => {
   if (!currentUser) return;
-  try { await setDoc(doc(db, "users", currentUser.email, "subscriptions", sub.id), sub); }
+  // Merge, and never send reminderLog: the daily email job owns that field, and
+  // overwriting it from a stale copy in this tab could cause a duplicate reminder
+  const { reminderLog, ...data } = sub;
+  try { await setDoc(doc(db, "users", currentUser.email, "subscriptions", sub.id), data, { merge: true }); }
   catch (err) { console.error("saveSubscription error:", err); toast("Couldn't save to the cloud.", true); }
 };
 window._deleteSubscriptionFromDB = async id => {

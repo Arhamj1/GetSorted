@@ -37,7 +37,6 @@
     const tl = introTl = gsap.timeline({ defaults: { ease: EASE } });
     tl.fromTo('.topbar', { y: -24, opacity: 0 }, { ...IN, duration: .6 })
       .fromTo('.greet small, .greet h1', { y: 28, opacity: 0 }, { ...IN, duration: .8, stagger: .08 }, '-=.35')
-      .fromTo('.greet .btn', { y: 16, opacity: 0, scale: .96 }, { ...IN, duration: .6, stagger: .06 }, '-=.6')
       .fromTo('.kpis', { y: 36, opacity: 0 }, { ...IN, duration: .8 }, '-=.5')
       .fromTo('.kpi', { y: 18, opacity: 0 }, { ...IN, duration: .6, stagger: .07 }, '-=.6');
 

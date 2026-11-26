@@ -78,8 +78,13 @@
   }
 
   /* ─── Parsing one email ─── */
+  /* Use the real address: the part in <...> when present (the last one), never the
+     display name, so "billing@netflix.com" <promo@evil.example> reads as evil.example */
   function senderDomain(from) {
-    const m = String(from || '').match(/@([a-z0-9.-]+)/i);
+    const s = String(from || '');
+    const angled = s.match(/<([^<>]*)>\s*$/) || [...s.matchAll(/<([^<>]*)>/g)].pop();
+    const addr = angled ? angled[1] : s.replace(/"[^"]*"/g, ' ').trim();
+    const m = addr.match(/@([a-z0-9.-]+)\s*$/i) || addr.match(/@([a-z0-9.-]+)/i);
     return m ? m[1].toLowerCase() : '';
   }
   const domainMatches = (dom, list) => list.some(d => dom === d || dom.endsWith('.' + d));
